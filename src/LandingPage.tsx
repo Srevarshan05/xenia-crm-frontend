@@ -694,12 +694,22 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         .zoho-footer-link:hover {
           color: #e31a22;
         }
+        @media (max-width: 1024px) {
+          .xenia-inside-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .xenia-inside-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       {/* SECTION 1 – NAVIGATION */}
       <nav className="zoho-nav">
         <div className="zoho-nav-logo" onClick={() => scrollToSection('home')}>
-          <div className="zoho-nav-logo-icon">X</div>
+          <img src="/logo.png" alt="Xenia CRM" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
           <span>Xenia CRM</span>
         </div>
         
@@ -725,10 +735,10 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         <div className="zoho-hero-grid">
           <div>
             <h1 className="zoho-h1">
-              Retail CRM Built For Smarter Shopper Engagement
+              Every Customer Journey Creates An Opportunity
             </h1>
             <p className="zoho-p-sub">
-              Identify opportunities, create campaigns, manage promotions, launch voice outreach, and track shopper engagement from a single platform.
+              Xenia helps retail teams discover growth opportunities, engage shoppers at the right moment, and understand the business impact of every action.
             </p>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               <button className="zoho-btn-red" style={{ padding: '12px 28px' }} onClick={onLaunch}>
@@ -789,6 +799,38 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           </div>
         </div>
       </header>
+
+      {/* WHAT HAPPENS INSIDE XENIA SECTION */}
+      <section className="zoho-section scroll-reveal" style={{ borderTop: '1px solid #e2e8f0', paddingBottom: '40px' }}>
+        <h2 className="zoho-h2">What Happens Inside Xenia?</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px', marginTop: '30px' }} className="xenia-inside-grid">
+          <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>01</div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Discover</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Find customer groups that need attention.</p>
+          </div>
+          <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>02</div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Plan</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Build targeted campaigns around business goals.</p>
+          </div>
+          <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>03</div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Review</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Validate audiences, content, and promotions.</p>
+          </div>
+          <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>04</div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Launch</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Reach shoppers across multiple channels.</p>
+          </div>
+          <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>05</div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Measure</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Track engagement, purchases, and outcomes.</p>
+          </div>
+        </div>
+      </section>
 
       {/* SECTION 3 – KEY CAPABILITIES */}
       <section id="features" className="zoho-section zoho-section-alt scroll-reveal">
@@ -1291,7 +1333,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         <div className="zoho-footer-grid">
           <div>
             <div className="zoho-nav-logo" style={{ marginBottom: '16px' }}>
-              <div className="zoho-nav-logo-icon">X</div>
+              <img src="/logo.png" alt="Xenia CRM" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
               <span>Xenia CRM</span>
             </div>
             <p className="zoho-body" style={{ fontSize: '13px', color: '#64748b' }}>

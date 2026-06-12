@@ -4720,7 +4720,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-header" onClick={() => setShowLanding(true)} style={{ cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className="sidebar-logo-icon">X</div>
+            <img src="/logo.png" alt="Xenia CRM" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             <span className="logo-text">Xenia CRM</span>
           </div>
         </div>
