@@ -691,6 +691,36 @@ p {
   border-radius: 4px;
 }
 
+/* Mobile Sidebar Toggle styling */
+.sidebar-toggle-btn {
+  display: none !important;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 6px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: #f1f5f9;
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  z-index: 95;
+  backdrop-filter: blur(2px);
+}
+
 /* Responsive Overrides */
 @media (max-width: 1024px) {
   .sidebar {
@@ -703,21 +733,34 @@ p {
   .main-content {
     margin-left: 0;
   }
+  .sidebar-toggle-btn {
+    display: flex !important;
+  }
+  .sidebar-backdrop {
+    display: block;
+  }
+  .breadcrumb-category, .breadcrumb-separator {
+    display: none !important;
+  }
+  .top-bar {
+    padding: 0 16px !important;
+  }
   .split-pane {
-    flex-direction: column;
-    height: auto;
-    overflow: visible;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    grid-template-columns: 1fr !important;
   }
-  .split-left {
-    flex: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    padding-right: 0;
-    padding-bottom: 24px;
-  }
-  .split-right {
-    padding-left: 0;
-    margin-top: 24px;
+  .split-left, .split-right {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    margin-top: 16px !important;
+    margin-bottom: 16px !important;
   }
 }
 
@@ -725,16 +768,14 @@ p {
   .content-body {
     padding: 16px;
   }
-  .top-bar {
-    padding: 0 16px;
-  }
   .grid-2, .grid-3, .grid-4 {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     gap: 16px;
   }
   .drawer-container {
-    width: 100%;
-    min-width: 100%;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
   }
 }
 

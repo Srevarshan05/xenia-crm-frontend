@@ -584,6 +584,9 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           gap: 15px;
           margin-top: 40px;
         }
+        @media (max-width: 1024px) {
+          .zoho-voice-workflow { grid-template-columns: repeat(3, 1fr); }
+        }
         @media (max-width: 768px) {
           .zoho-voice-workflow { grid-template-columns: 1fr; }
         }
@@ -757,6 +760,37 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         @media (max-width: 640px) {
           .xenia-inside-grid {
             grid-template-columns: 1fr !important;
+          }
+        }
+        
+        .zoho-table-responsive {
+          overflow-x: auto;
+          width: 100%;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          margin-top: 40px;
+        }
+        
+        .zoho-comp-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 0 !important;
+          border: none !important;
+        }
+
+        @media (max-width: 640px) {
+          .zoho-nav-actions {
+            gap: 8px !important;
+          }
+          .zoho-btn-text {
+            display: none !important;
+          }
+          .zoho-btn-red {
+            padding: 8px 14px !important;
+            font-size: 13px !important;
+          }
+          .zoho-nav-logo span {
+            font-size: 16px !important;
           }
         }
       `}</style>
@@ -1331,42 +1365,44 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           Compare Xenia CRM against traditional black-box platforms.
         </p>
         
-        <table className="zoho-comp-table">
-          <thead>
-            <tr>
-              <th>CRITERION</th>
-              <th>XENIA CRM WORKFLOW</th>
-              <th>TRADITIONAL MARKETING TOOLS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Explainable Decisions</strong></td>
-              <td>Clear context reasons for customer selections and metrics.</td>
-              <td>Opaque algorithms recommending bulk cohorts with zero visibility.</td>
-            </tr>
-            <tr>
-              <td><strong>Human Approval</strong></td>
-              <td>Marketers review, edit, and approve every generated campaign.</td>
-              <td>Risky auto-blast integrations that can dispatch incorrect offers.</td>
-            </tr>
-            <tr>
-              <td><strong>Promotion Control</strong></td>
-              <td>Checks margins, cities, and categories dynamically.</td>
-              <td>Flat discount codes that erode product margins indiscriminately.</td>
-            </tr>
-            <tr>
-              <td><strong>Voice Outreach</strong></td>
-              <td>High-quality regional voice (Tamil/Hindi) calling options.</td>
-              <td>Spammy SMS/emails that customers filter automatically.</td>
-            </tr>
-            <tr>
-              <td><strong>Attribution Funnel</strong></td>
-              <td>Tracks dispatches directly to checkout order items.</td>
-              <td>Vague pixel estimates with no direct checkout mapping.</td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="zoho-table-responsive">
+          <table className="zoho-comp-table">
+            <thead>
+              <tr>
+                <th>CRITERION</th>
+                <th>XENIA CRM WORKFLOW</th>
+                <th>TRADITIONAL MARKETING TOOLS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Explainable Decisions</strong></td>
+                <td>Clear context reasons for customer selections and metrics.</td>
+                <td>Opaque algorithms recommending bulk cohorts with zero visibility.</td>
+              </tr>
+              <tr>
+                <td><strong>Human Approval</strong></td>
+                <td>Marketers review, edit, and approve every generated campaign.</td>
+                <td>Risky auto-blast integrations that can dispatch incorrect offers.</td>
+              </tr>
+              <tr>
+                <td><strong>Promotion Control</strong></td>
+                <td>Checks margins, cities, and categories dynamically.</td>
+                <td>Flat discount codes that erode product margins indiscriminately.</td>
+              </tr>
+              <tr>
+                <td><strong>Voice Outreach</strong></td>
+                <td>High-quality regional voice (Tamil/Hindi) calling options.</td>
+                <td>Spammy SMS/emails that customers filter automatically.</td>
+              </tr>
+              <tr>
+                <td><strong>Attribution Funnel</strong></td>
+                <td>Tracks dispatches directly to checkout order items.</td>
+                <td>Vague pixel estimates with no direct checkout mapping.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {/* SECTION 8 – FINAL CTA (Black Background banner) */}

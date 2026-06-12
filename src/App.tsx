@@ -75,7 +75,8 @@ import {
   XCircle,
   ShoppingBag,
   Sparkles,
-  Handshake
+  Handshake,
+  Menu
 } from 'lucide-react';
 
 // Campaign Tracking Icon Attribution (Flaticon):
@@ -190,6 +191,7 @@ export default function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<'home' | 'opportunities' | 'campaigns' | 'shoppers' | 'analytics' | 'promotions' | 'voice_campaigns' | 'settings'>('home');
   const [showLanding, setShowLanding] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   // Shared Selections/Transitions State
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
@@ -4716,9 +4718,17 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+      
       {/* Left Navigation Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header" onClick={() => setShowLanding(true)} style={{ cursor: 'pointer' }}>
+      <aside className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header" onClick={() => { setShowLanding(true); setIsMobileSidebarOpen(false); }} style={{ cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/logo.png" alt="Xenia CRM" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             <span className="logo-text">Xenia CRM</span>
@@ -4727,7 +4737,7 @@ export default function App() {
         
         <nav className="sidebar-nav">
           <div 
-            onClick={() => setActiveTab('home')} 
+            onClick={() => { setActiveTab('home'); setIsMobileSidebarOpen(false); }} 
             className={`nav-item ${activeTab === 'home' ? 'active' : ''}`}
           >
             <LayoutDashboard size={16} />
@@ -4735,7 +4745,7 @@ export default function App() {
           </div>
           
           <div 
-            onClick={() => setActiveTab('opportunities')} 
+            onClick={() => { setActiveTab('opportunities'); setIsMobileSidebarOpen(false); }} 
             className={`nav-item ${activeTab === 'opportunities' ? 'active' : ''}`}
           >
             <Flame size={16} />
@@ -4745,6 +4755,7 @@ export default function App() {
           <div 
             onClick={() => {
               setActiveTab('campaigns');
+              setIsMobileSidebarOpen(false);
               if (!prefilledGoal) {
                 setCampaignSubTab('active');
               }
@@ -4756,7 +4767,7 @@ export default function App() {
           </div>
           
           <div 
-            onClick={() => setActiveTab('shoppers')} 
+            onClick={() => { setActiveTab('shoppers'); setIsMobileSidebarOpen(false); }} 
             className={`nav-item ${activeTab === 'shoppers' ? 'active' : ''}`}
           >
             <Users size={16} />
@@ -4764,7 +4775,7 @@ export default function App() {
           </div>
           
           <div 
-            onClick={() => setActiveTab('analytics')} 
+            onClick={() => { setActiveTab('analytics'); setIsMobileSidebarOpen(false); }} 
             className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
           >
             <BarChart2 size={16} />
@@ -4772,7 +4783,7 @@ export default function App() {
           </div>
 
           <div 
-            onClick={() => setActiveTab('promotions')} 
+            onClick={() => { setActiveTab('promotions'); setIsMobileSidebarOpen(false); }} 
             className={`nav-item ${activeTab === 'promotions' ? 'active' : ''}`}
           >
             <Tag size={16} />
@@ -4784,7 +4795,7 @@ export default function App() {
             Premium Channels
           </div>
           <div 
-            onClick={() => setActiveTab('voice_campaigns')} 
+            onClick={() => { setActiveTab('voice_campaigns'); setIsMobileSidebarOpen(false); }} 
             className={`nav-item ${activeTab === 'voice_campaigns' ? 'active' : ''}`}
             style={{ position: 'relative' }}
           >
@@ -4806,7 +4817,7 @@ export default function App() {
           {/* Settings — always at the bottom */}
           <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
             <div 
-              onClick={() => setActiveTab('settings')} 
+              onClick={() => { setActiveTab('settings'); setIsMobileSidebarOpen(false); }} 
               className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
             >
               <Settings size={16} />
@@ -4819,9 +4830,27 @@ export default function App() {
       {/* Main Panel Router Wrapper */}
       <main className="main-content">
         <header className="top-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Xenia Operations</span>
-            <span style={{ color: 'var(--border-color)' }}>/</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button 
+              className="sidebar-toggle-btn"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              aria-label="Toggle Navigation Sidebar"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px'
+              }}
+            >
+              <Menu size={20} />
+            </button>
+            <span className="breadcrumb-category" style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Xenia Operations</span>
+            <span className="breadcrumb-separator" style={{ color: 'var(--border-color)' }}>/</span>
             <h1 className="page-title">
               {activeTab === 'home' && 'Operations Dashboard'}
               {activeTab === 'opportunities' && 'Suggested Actions Pipeline'}
