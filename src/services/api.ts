@@ -615,4 +615,188 @@ export const api = {
     if (!res.ok) throw new Error("Failed to load promotion segments");
     return res.json();
   },
+
+  // ── Voice Campaigns ──────────────────────────────────────────────────────────
+  getVoiceModels: async (): Promise<any[]> => {
+    const res = await fetch(`${API_BASE_URL}/api/voice/voices`);
+    if (!res.ok) throw new Error("Failed to load voice models");
+    return res.json();
+  },
+
+  getVoiceEligibleAudience: async (): Promise<VoiceEligibleAudienceResponse> => {
+    const res = await fetch(`${API_BASE_URL}/api/voice/eligible-audience`);
+    if (!res.ok) throw new Error("Failed to load voice eligible audience");
+    return res.json();
+  },
+
+  generateVoiceScript: async (payload: VoiceScriptRequest): Promise<VoiceScriptResponse> => {
+    const res = await fetch(`${API_BASE_URL}/api/voice/generate-script`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Failed to generate voice script");
+    return res.json();
+  },
+
+  simulateVoiceCalls: async (payload: { shoppers: VoiceEligibleShopper[]; promo_code?: string }): Promise<VoiceSimulationResponse> => {
+    const res = await fetch(`${API_BASE_URL}/api/voice/simulate-calls`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Failed to simulate voice calls");
+    return res.json();
+  },
+
+  generateAudio: async (payload: AudioRequest): Promise<AudioResponse> => {
+    const res = await fetch(`${API_BASE_URL}/api/voice/generate-audio`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Failed to generate audio");
+    return res.json();
+  },
+
+  // ── Settings ──────────────────────────────────────────────────────────────────
+  getApiKeyStatus: async (): Promise<ApiKeyStatus> => {
+    const res = await fetch(`${API_BASE_URL}/api/settings/api-keys`);
+    if (!res.ok) throw new Error("Failed to load API key status");
+    return res.json();
+  },
+
+  updateApiKeys: async (payload: { groq_api_key?: string; elevenlabs_api_key?: string }): Promise<ApiKeyStatus> => {
+    const res = await fetch(`${API_BASE_URL}/api/settings/api-keys`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Failed to update API keys");
+    return res.json();
+  },
 };
+
+// ── Voice Campaign Types ───────────────────────────────────────────────────────
+
+export interface VoiceEligibleShopper {
+  customer_id: string;
+  name: string;
+  city: string;
+  segment_name: string;
+  lifetime_value: number;
+  last_purchase_days: number;
+  total_orders: number;
+  top_category?: string;
+  churn_probability?: number;
+  reason_selected: string;
+}
+
+export interface VoiceAudienceSummary {
+  total_identified: number;
+  avg_ltv: number;
+  avg_inactivity_days: number;
+  potential_recovery_value: number;
+  city_distribution: Record<string, number>;
+  segment_distribution: Record<string, number>;
+  is_large_audience: boolean;
+  large_audience_warning?: string;
+}
+
+export interface VoiceEligibleAudienceResponse {
+  summary: VoiceAudienceSummary;
+  shoppers: VoiceEligibleShopper[];
+}
+
+export interface VoiceScriptRequest {
+  campaign_goal: string;
+  audience_segment: string;
+  audience_size: number;
+  avg_ltv: number;
+  avg_inactivity_days: number;
+  voice_tone: string;
+  language: string;
+  voice_model: string;
+  promo_code?: string;
+  discount_value?: number;
+  discount_type?: string;
+  brand_name?: string;
+  top_category?: string;
+}
+
+export interface VoiceScriptSection {
+  call_objective: string;
+  opening: string;
+  main_offer: string;
+  closing: string;
+  cta: string;
+  full_script: string;
+}
+
+export interface VoiceScriptResponse {
+  script: VoiceScriptSection;
+  estimated_duration_sec: number;
+  estimated_cost_per_call_inr: number;
+  estimated_total_cost_inr: number;
+  voice_model_name: string;
+  language: string;
+  word_count: number;
+  notes: string;
+}
+
+export interface VoiceCallEvent {
+  shopper_name: string;
+  customer_id: string;
+  city: string;
+  segment: string;
+  ltv: number;
+  call_status: 'completed' | 'no_answer' | 'busy' | 'dropped';
+  duration_sec?: number;
+  promo_sent: boolean;
+  purchase_attributed: boolean;
+  attributed_revenue?: number;
+  timeline: { event: string; time: string; icon: string }[];
+}
+
+export interface VoiceSimulationResponse {
+  campaign_id: string;
+  total_calls_initiated: number;
+  calls_answered: number;
+  calls_completed: number;
+  calls_no_answer: number;
+  calls_dropped: number;
+  interested_customers: number;
+  promo_sent: number;
+  attributed_purchases: number;
+  total_revenue_generated: number;
+  estimated_roi: number;
+  estimated_cost_inr: number;
+  shopper_events: VoiceCallEvent[];
+}
+
+// ── Audio & Settings Types ─────────────────────────────────────────────────────
+
+export interface AudioRequest {
+  text: string;
+  voice_model?: string;
+  stability?: number;
+  similarity_boost?: number;
+  style?: number;
+  use_speaker_boost?: boolean;
+}
+
+export interface AudioResponse {
+  audio_base64: string;    // base64-encoded MP3 (empty string if mock)
+  content_type: string;
+  duration_estimate_sec: number;
+  voice_model_name: string;
+  generated_by: 'elevenlabs' | 'mock';
+}
+
+export interface ApiKeyStatus {
+  groq_api_key_set: boolean;
+  groq_api_key_preview: string;
+  elevenlabs_api_key_set: boolean;
+  elevenlabs_api_key_preview: string;
+  env_file_path: string;
+}

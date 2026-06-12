@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from './services/api';
+import LandingPage from './LandingPage';
 import type { 
   Customer, 
   Opportunity, 
@@ -11,7 +12,13 @@ import type {
   CustomerSegment,
   ShopperStory,
   GoalPlannerResponse,
-  Promotion
+  Promotion,
+  VoiceEligibleAudienceResponse,
+  VoiceScriptResponse,
+  VoiceSimulationResponse,
+  VoiceCallEvent,
+  ApiKeyStatus,
+  CustomerMetrics,
 } from './services/api';
 import { 
   LayoutDashboard, 
@@ -34,33 +41,155 @@ import {
   Edit,
   Plus,
   Trash2,
-  Smartphone,
-  Mail,
   MessageSquare,
-  Clock,
   Eye,
-  CheckSquare
+  EyeOff,
+  CheckSquare,
+  Phone,
+  Mic,
+  PlayCircle,
+  PauseCircle,
+  RotateCcw,
+  AlertOctagon,
+  TrendingUp,
+  PhoneCall,
+  PhoneMissed,
+  Headphones,
+  Settings,
+  Key,
+  CheckCircle,
+  Save,
+  Gem,
+  Calendar,
+  Clock,
+  FileText,
+  Globe,
+  Target,
+  Volume2,
+  Gift,
+  Trophy,
+  Zap,
+  Megaphone,
+  MapPin,
+  PhoneOff,
+  XCircle,
+  ShoppingBag,
+  Sparkles,
+  Handshake
 } from 'lucide-react';
 
-// Channel Icons Attribution:
-// WhatsApp icon: <a href="https://www.flaticon.com/free-icons/whatsapp" title="whatsapp icons">Whatsapp icons created by Pixel perfect - Flaticon</a>
-// Email icon: <a href="https://www.flaticon.com/free-icons/gmail" title="gmail icons">Gmail icons created by Freepik - Flaticon</a>
-// SMS icon: <a href="https://www.flaticon.com/free-icons/sms" title="sms icons">Sms icons created by Lizel Arina - Flaticon</a>
+// Campaign Tracking Icon Attribution (Flaticon):
+// Sent: <a href="https://www.flaticon.com/free-icons/send" title="send icons">Send icons created by Freepik - Flaticon</a>
+// Delivered: <a href="https://www.flaticon.com/free-icons/delivered" title="delivered icons">Delivered icons created by Freepik - Flaticon</a>
+// Opened: <a href="https://www.flaticon.com/free-icons/view" title="view icons">View icons created by Freepik - Flaticon</a>
+// Clicked: <a href="https://www.flaticon.com/free-icons/cursor" title="cursor icons">Cursor icons created by Freepik - Flaticon</a>
+// Promo Applied: <a href="https://www.flaticon.com/free-icons/coupon" title="coupon icons">Coupon icons created by Freepik - Flaticon</a>
+// Purchased: <a href="https://www.flaticon.com/free-icons/shopping-bag" title="shopping bag icons">Shopping bag icons created by Freepik - Flaticon</a>
 const ICONS = {
-  sent: "https://cdn-icons-png.flaticon.com/512/2983/2983787.png",
-  delivered: "https://cdn-icons-png.flaticon.com/512/3178/3178158.png",
-  opened: "https://cdn-icons-png.flaticon.com/512/709/709612.png",
-  clicked: "https://cdn-icons-png.flaticon.com/512/282/282091.png",
+  sent:          "https://cdn-icons-png.flaticon.com/512/10703/10703146.png",
+  delivered:     "https://cdn-icons-png.flaticon.com/512/17049/17049771.png",
+  opened:        "https://cdn-icons-png.flaticon.com/512/709/709612.png",
+  clicked:       "https://cdn-icons-png.flaticon.com/512/2129/2129111.png",
   promo_applied: "https://cdn-icons-png.flaticon.com/512/726/726476.png",
-  purchased: "https://cdn-icons-png.flaticon.com/512/1170/1170678.png",
-  whatsapp: "https://cdn-icons-png.flaticon.com/512/733/733585.png",
-  email: "https://cdn-icons-png.flaticon.com/512/732/732200.png",
-  sms: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png"
+  purchased:     "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+  whatsapp:      "https://cdn-icons-png.flaticon.com/512/733/733585.png",
+  email:         "https://cdn-icons-png.flaticon.com/512/732/732200.png",
+  sms:           "https://cdn-icons-png.flaticon.com/512/3616/3616215.png"
 };
+
+function getOpportunityTypeName(type: string): string {
+  const t = (type || '').toLowerCase().trim();
+  if (t === 'winback') return 'VIP Shopper Re-engagement';
+  if (t === 'reactivation') return 'Dormant Shopper Recovery';
+  if (t === 'channel_push') return 'WhatsApp Promotion Campaign';
+  if (t === 'cross_sell') return 'Related Product Promotion';
+  return type.replace('_', ' ');
+}
+
+function SkeletonLoader({ type = 'table', rows = 4 }: { type?: 'table' | 'cards' | 'text' | 'kpi', rows?: number }) {
+  return (
+    <div style={{ padding: '20px', width: '100%' }}>
+      {type === 'table' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="skeleton-item" style={{ height: '40px', width: '100%' }} />
+          {Array.from({ length: rows }).map((_, idx) => (
+            <div key={idx} style={{ display: 'flex', gap: '16px' }}>
+              <div className="skeleton-item" style={{ height: '20px', flex: 2 }} />
+              <div className="skeleton-item" style={{ height: '20px', flex: 1 }} />
+              <div className="skeleton-item" style={{ height: '20px', flex: 1 }} />
+              <div className="skeleton-item" style={{ height: '20px', flex: 3 }} />
+            </div>
+          ))}
+        </div>
+      )}
+      {type === 'cards' && (
+        <div className="grid-3">
+          {Array.from({ length: rows }).map((_, idx) => (
+            <div key={idx} className="workspace-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
+              <div className="skeleton-item" style={{ height: '24px', width: '60%' }} />
+              <div className="skeleton-item" style={{ height: '16px', width: '100%' }} />
+              <div className="skeleton-item" style={{ height: '16px', width: '80%' }} />
+              <div className="skeleton-item" style={{ height: '32px', width: '40%', marginTop: '8px' }} />
+            </div>
+          ))}
+        </div>
+      )}
+      {type === 'kpi' && (
+        <div className="grid-4">
+          {Array.from({ length: rows }).map((_, idx) => (
+            <div key={idx} className="workspace-panel" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', margin: 0 }}>
+              <div className="skeleton-item" style={{ height: '16px', width: '50%' }} />
+              <div className="skeleton-item" style={{ height: '36px', width: '70%' }} />
+              <div className="skeleton-item" style={{ height: '14px', width: '30%' }} />
+            </div>
+          ))}
+        </div>
+      )}
+      {type === 'text' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="skeleton-item" style={{ height: '28px', width: '40%' }} />
+          <div className="skeleton-item" style={{ height: '16px', width: '100%' }} />
+          <div className="skeleton-item" style={{ height: '16px', width: '95%' }} />
+          <div className="skeleton-item" style={{ height: '16px', width: '90%' }} />
+          <div className="skeleton-item" style={{ height: '16px', width: '60%' }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ title, description, actionText, onAction }: { title: string, description: string, actionText?: string, onAction?: () => void }) {
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '48px 24px',
+      textAlign: 'center',
+      backgroundColor: 'var(--bg-surface)',
+      border: '1px dashed var(--border-color)',
+      borderRadius: '6px',
+      margin: '24px 0',
+      width: '100%'
+    }}>
+      <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</div>
+      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '400px', marginBottom: '20px', lineHeight: 1.5 }}>
+        {description}
+      </p>
+      {actionText && onAction && (
+        <button className="btn btn-primary" onClick={onAction}>
+          {actionText}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function App() {
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'home' | 'opportunities' | 'campaigns' | 'shoppers' | 'analytics' | 'promotions'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'opportunities' | 'campaigns' | 'shoppers' | 'analytics' | 'promotions' | 'voice_campaigns' | 'settings'>('home');
+  const [showLanding, setShowLanding] = useState(true);
   
   // Shared Selections/Transitions State
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
@@ -110,35 +239,6 @@ export default function App() {
   };
 
   // ────────────────────────────────────────────────────────────────────────────
-  // WORKFLOW PROGRESS PATH HELPER
-  // ────────────────────────────────────────────────────────────────────────────
-  function WorkflowProgress({ currentStep }: { currentStep: 1 | 2 | 3 | 4 | 5 }) {
-    const steps = [
-      { id: 1, label: "1. Identify Opportunity" },
-      { id: 2, label: "2. Prepare Campaign" },
-      { id: 3, label: "3. Simulate & Review" },
-      { id: 4, label: "4. Approve & Dispatch" },
-      { id: 5, label: "5. Track Performance" }
-    ];
-    return (
-      <div className="flow-steps">
-        {steps.map((s, idx) => {
-          let stepClass = "flow-step-item";
-          if (s.id === currentStep) stepClass += " active";
-          else if (s.id < currentStep) stepClass += " done";
-          
-          return (
-            <React.Fragment key={s.id}>
-              <span className={stepClass}>{s.label}</span>
-              {idx < steps.length - 1 && <span style={{ color: 'var(--text-muted)' }}>➔</span>}
-            </React.Fragment>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // ────────────────────────────────────────────────────────────────────────────
   // 1. HOME VIEW (DAILY BRIEFING & QUEUES)
   // ────────────────────────────────────────────────────────────────────────────
   function HomeView() {
@@ -186,7 +286,7 @@ export default function App() {
       <div className="fade-in">
         {/* Executive Daily Brief Banner */}
         {brief && (
-          <div className="card" style={{ borderLeft: '4px solid var(--color-accent)', padding: '20px', marginBottom: '20px' }}>
+          <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
             <div className="flex-between" style={{ marginBottom: '8px' }}>
               <span className="badge badge-primary" style={{ fontSize: '9.5px' }}>Daily Operations Briefing</span>
               <span className="text-muted" style={{ fontSize: '11px' }}>
@@ -460,134 +560,152 @@ export default function App() {
       setActiveTab('campaigns');
     };
 
-    if (loading) return <LoadingSpinner label="Evaluating opportunities pipeline..." />;
+    if (loading) return <SkeletonLoader type="cards" rows={3} />;
     if (error) return <ErrorMessage message={error} />;
 
     return (
-      <div className="split-pane fade-in">
-        {/* Left pane - directory */}
-        <div className="split-left" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Suggested Actions</div>
-          {opportunities.map(opp => (
-            <div 
-              key={opp.opportunity_id}
-              onClick={() => handleSelectOpportunity(opp)}
-              style={{
-                backgroundColor: 'var(--bg-surface)',
-                border: selectedOpp?.opportunity_id === opp.opportunity_id ? '1.5px solid var(--color-accent)' : '1px solid var(--border-color)',
-                borderRadius: '6px',
-                padding: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.1s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
-              }}
-              className="nav-item-hover"
-            >
-              <div className="flex-between">
-                <span style={{ fontWeight: 700, textTransform: 'capitalize', fontSize: '12.5px', color: 'var(--text-primary)' }}>
-                  {(opp.type || '').replace('_', ' ')}
-                </span>
-                <span className={`badge ${opp.priority === 'High' ? 'badge-danger' : opp.priority === 'Medium' ? 'badge-warning' : 'badge-neutral'}`} style={{ fontSize: '9.5px' }}>
-                  {opp.priority}
-                </span>
-              </div>
-              
-              <div>
-                <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '2px' }}>Why Generated:</span>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.35 }}>{opp.description}</p>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px', fontSize: '10.5px', borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
-                <div><span style={{ color: 'var(--text-muted)' }}>Audience Size:</span> <strong style={{ color: 'var(--text-primary)' }}>{opp.audience_size}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Potential Revenue:</span> <strong style={{ color: 'var(--color-success)' }}>₹{opp.potential_revenue.toLocaleString('en-IN')}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Channel:</span> <strong style={{ color: 'var(--text-primary)' }}>{opp.recommended_channel || 'WhatsApp'}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Promotion:</span> <strong style={{ color: 'var(--color-accent)' }}>{opp.recommended_promotion_code || 'None'}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Confidence Score:</span> <strong style={{ color: 'var(--text-primary)' }}>{opp.confidence_score ? `${Math.round(opp.confidence_score * 100)}%` : '85%'}</strong></div>
-                <div><span style={{ color: 'var(--text-muted)' }}>Generated Date:</span> <span style={{ color: 'var(--text-secondary)' }}>{new Date(opp.created_at).toLocaleDateString()}</span></div>
-              </div>
-            </div>
-          ))}
+      <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+        {/* Workspace Subheader — main title is in topbar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px' }}>
+            Evaluate system-identified business opportunities for custom customer segments. Select any opportunity to coordinate and draft targeted outreach.
+          </p>
+          {selectedOpp && (
+            <button className="btn btn-primary" onClick={() => handlePrepareCampaign(selectedOpp)}>
+              <span>Begin Campaign Preparation</span>
+              <ArrowRight size={15} />
+            </button>
+          )}
         </div>
 
-        {/* Right pane - details */}
-        <div className="split-right">
-          {selectedOpp ? (
-            <div className="card" style={{ margin: 0 }}>
-              <WorkflowProgress currentStep={1} />
-              
-              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '14px' }}>
-                <div className="flex-between" style={{ marginBottom: '6px' }}>
-                  <span className="badge badge-primary" style={{ textTransform: 'capitalize', fontSize: '9px' }}>
-                    {(selectedOpp.type || '').replace('_', ' ')}
-                  </span>
-                  <span className="text-muted" style={{ fontSize: '11px' }}>ID: {selectedOpp.opportunity_id.substring(0, 8)}</span>
-                </div>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>{selectedOpp.description}</h2>
-                
-                <div style={{ display: 'flex', gap: '20px', marginTop: '12px' }}>
-                  <div>
-                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Audience Reach</div>
-                    <div style={{ fontSize: '15px', fontWeight: 700 }}>{selectedOpp.audience_size} Shoppers</div>
+        {/* Workspace Layout - Split Pane */}
+        <div className="split-pane" style={{ height: 'calc(100vh - var(--header-height) - 180px)' }}>
+          {/* Left Panel - Listings */}
+          <div className="split-left" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              Select Action Opportunity
+            </div>
+            {opportunities.length === 0 ? (
+              <EmptyState 
+                title="No Suggested Actions Available" 
+                description="Our algorithms haven't flagged any reactivation opportunities at this time. Check back later."
+              />
+            ) : (
+              opportunities.map(opp => (
+                <div 
+                  key={opp.opportunity_id}
+                  onClick={() => handleSelectOpportunity(opp)}
+                  style={{
+                    backgroundColor: selectedOpp?.opportunity_id === opp.opportunity_id ? 'var(--color-accent-light)' : 'var(--bg-surface)',
+                    border: selectedOpp?.opportunity_id === opp.opportunity_id ? '1px solid var(--color-accent)' : '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}
+                >
+                  <div className="flex-between">
+                    <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                      {getOpportunityTypeName(opp.type)}
+                    </span>
+                    <span className={`badge ${opp.priority === 'High' ? 'badge-danger' : opp.priority === 'Medium' ? 'badge-warning' : 'badge-neutral'}`}>
+                      {opp.priority}
+                    </span>
                   </div>
-                  <div>
-                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Revenue Value Potential</div>
-                    <div className="mono-align" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-success)', textAlign: 'left' }}>
-                      INR {selectedOpp.potential_revenue.toLocaleString('en-IN')}
+                  
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>{opp.description}</p>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', fontSize: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                    <div><span style={{ color: 'var(--text-secondary)' }}>Audience Size:</span> <strong style={{ color: 'var(--text-primary)' }}>{opp.audience_size.toLocaleString()}</strong></div>
+                    <div><span style={{ color: 'var(--text-secondary)' }}>Potential Revenue:</span> <strong style={{ color: 'var(--color-success)' }}>₹{opp.potential_revenue.toLocaleString('en-IN')}</strong></div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Right Panel - Detail Spec Sheet */}
+          <div className="split-right">
+            {selectedOpp ? (
+              <div className="workspace-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', margin: 0 }}>
+                <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
+                  <div className="flex-between" style={{ marginBottom: '12px' }}>
+                    <span className="badge badge-primary">{getOpportunityTypeName(selectedOpp.type)}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Identifier: {selectedOpp.opportunity_id.substring(0, 8)}</span>
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', margin: '8px 0', lineHeight: 1.4 }}>{selectedOpp.description}</h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '20px' }}>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '14px 18px', backgroundColor: '#F8FAFC' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Audience Reach</span>
+                      <div style={{ fontSize: '20px', fontWeight: 700, marginTop: '4px', color: 'var(--text-primary)' }}>{selectedOpp.audience_size.toLocaleString()} Shoppers</div>
+                    </div>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '14px 18px', backgroundColor: '#F8FAFC' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Revenue Opportunity</span>
+                      <div style={{ fontSize: '20px', fontWeight: 700, marginTop: '4px', color: 'var(--color-success)' }}>
+                        INR {selectedOpp.potential_revenue.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '14px 18px', backgroundColor: '#F8FAFC' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Confidence Rating</span>
+                      <div style={{ fontSize: '20px', fontWeight: 700, marginTop: '4px', color: 'var(--color-accent)' }}>
+                        {selectedOpp.confidence_score ? `${Math.round(selectedOpp.confidence_score * 100)}%` : '85%'}
+                      </div>
                     </div>
                   </div>
-                  {selectedOpp.confidence_score && (
-                    <div>
-                      <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Confidence Rating</div>
-                      <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-accent)' }}>{Math.round(selectedOpp.confidence_score * 100)}%</div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                      Behavioral Context & Justification
+                    </h4>
+                    <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                      {selectedOpp.ai_explanation || "No behavioral analytics details available for this segment."}
+                    </p>
+                  </div>
+
+                  {selectedOpp.ai_action_plan && (
+                    <div style={{ backgroundColor: '#F8FAFC', padding: '16px 20px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                      <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+                        Strategy Action Plan
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {selectedOpp.ai_action_plan.split('\n').map((step, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: '10px', fontSize: '14px', alignItems: 'flex-start' }}>
+                            <span style={{ color: 'var(--color-accent)', fontWeight: 700, minWidth: '16px' }}>{idx + 1}.</span>
+                            <span style={{ color: 'var(--text-secondary)', lineHeight: 1.45 }}>{step.replace(/^\d+\.\s*/, '')}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                    Why This Matters
-                  </h3>
-                  <p style={{ fontSize: '13px', lineHeight: '1.45', color: 'var(--text-secondary)' }}>
-                    {selectedOpp.ai_explanation || "No behavioral analytics details available for this segment."}
-                  </p>
-                </div>
-
-                {selectedOpp.ai_action_plan && (
-                  <div style={{ backgroundColor: '#fafafa', padding: '12px 14px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                    <h3 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                      Recommended Next Steps
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {selectedOpp.ai_action_plan.split('\n').map((step, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', alignItems: 'flex-start' }}>
-                          <span style={{ color: 'var(--color-accent)', fontWeight: 700 }}>{idx + 1}.</span>
-                          <span style={{ color: 'var(--text-secondary)' }}>{step.replace(/^\d+\.\s*/, '')}</span>
-                        </div>
-                      ))}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '20px', alignItems: 'center' }}>
+                    <div style={{ marginRight: 'auto', display: 'flex', gap: '24px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      <span>Recommended Channel: <strong style={{ color: 'var(--text-primary)' }}>{selectedOpp.recommended_channel || 'WhatsApp'}</strong></span>
+                      <span>Recommended Promotion: <strong style={{ color: 'var(--text-primary)' }}>{selectedOpp.recommended_promotion_code || 'None'}</strong></span>
                     </div>
+                    <button 
+                      className="btn btn-primary"
+                      onClick={() => handlePrepareCampaign(selectedOpp)}
+                    >
+                      <span>Begin Campaign Preparation</span>
+                      <ArrowRight size={14} />
+                    </button>
                   </div>
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                  <button 
-                    className="btn btn-primary"
-                    onClick={() => handlePrepareCampaign(selectedOpp)}
-                  >
-                    <span>Begin Campaign Preparation</span>
-                    <ArrowRight size={14} />
-                  </button>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: 'var(--text-muted)' }}>
-              Select an opportunity from the list to review the analysis.
-            </div>
-          )}
+            ) : (
+              <EmptyState 
+                title="Select Suggested Action" 
+                description="Choose an opportunity from the list on the left to view behavior predictions, financial details, and launch preparation steps."
+              />
+            )}
+          </div>
         </div>
       </div>
     );
@@ -645,7 +763,6 @@ export default function App() {
     // Dynamic shopper drawer stats
     const [shopperMetrics, setShopperMetrics] = useState<CustomerMetrics | null>(null);
     const [shopperSegments, setShopperSegments] = useState<string[]>([]);
-    const [shopperDetails, setShopperDetails] = useState<Customer | null>(null);
     const [loadingShopperDrawer, setLoadingShopperDrawer] = useState(false);
 
     // Promotion Intelligence Drawer state moved to parent lexical scope
@@ -909,7 +1026,7 @@ export default function App() {
       }
     };
 
-    function getSelectionReason(cust: any, segmentName: string) {
+    function getSelectionReason(cust: any, _segmentName: string) {
       if (cust) {
         // 1. High Churn Risk
         if (cust.churn_probability !== undefined && cust.churn_probability !== null && cust.churn_probability >= 0.7) {
@@ -991,13 +1108,11 @@ export default function App() {
       setLoadingShopperDrawer(true);
       setShopperMetrics(null);
       setShopperSegments([]);
-      setShopperDetails(null);
       try {
-        const [cust, metrics] = await Promise.all([
+        const [, metrics] = await Promise.all([
           api.getCustomer(rec.customer.customer_id),
           api.getCustomerMetrics(rec.customer.customer_id)
         ]);
-        setShopperDetails(cust);
         setShopperMetrics(metrics);
         
         const res = await fetch(`http://localhost:8000/api/customers/${rec.customer.customer_id}/segments`);
@@ -1023,42 +1138,149 @@ export default function App() {
 
     return (
       <div className="fade-in">
-        {/* Five Stage subtab coordinator */}
-        <div className="tab-row" style={{ marginBottom: '16px' }}>
-          <button 
-            className={`tab-button ${campaignSubTab === 'prepare' ? 'active' : ''}`}
+        {/* Guided Lifecycle Workflow Indicator Block */}
+        <div className="flow-steps" style={{ marginBottom: '24px' }}>
+          <div 
+            className={`flow-step-item ${campaignSubTab === 'prepare' ? 'active' : ''}`}
             onClick={() => { setCampaignSubTab('prepare'); setSuccessMsg(null); setError(null); }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            <Plus size={13} style={{ marginRight: '4px' }} />
-            Prepare Campaign
-          </button>
-          <button 
-            className={`tab-button ${campaignSubTab === 'review' ? 'active' : ''}`}
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '20px', 
+              height: '20px', 
+              borderRadius: '50%', 
+              backgroundColor: campaignSubTab === 'prepare' ? 'var(--color-accent)' : '#E5E7EB', 
+              color: campaignSubTab === 'prepare' ? '#fff' : 'var(--text-secondary)', 
+              fontSize: '11px', 
+              fontWeight: 'bold', 
+              marginRight: '6px' 
+            }}>1</span>
+            <img 
+              src="https://cdn-icons-png.flaticon.com/512/344/344103.png" 
+              alt="Shoppers" 
+              style={{ width: '16px', height: '16px', marginRight: '6px', objectFit: 'contain' }}
+            />
+            <span>Shoppers</span>
+          </div>
+          <span className="flow-step-separator">➔</span>
+
+          <div 
+            className={`flow-step-item ${campaignSubTab === 'prepare' ? 'active' : ''}`}
+            onClick={() => { setCampaignSubTab('prepare'); setSuccessMsg(null); setError(null); }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          >
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '20px', 
+              height: '20px', 
+              borderRadius: '50%', 
+              backgroundColor: campaignSubTab === 'prepare' ? 'var(--color-accent)' : '#E5E7EB', 
+              color: campaignSubTab === 'prepare' ? '#fff' : 'var(--text-secondary)', 
+              fontSize: '11px', 
+              fontWeight: 'bold', 
+              marginRight: '6px' 
+            }}>2</span>
+            <img 
+              src="https://cdn-icons-png.flaticon.com/512/150/150194.png" 
+              alt="Promotion" 
+              style={{ width: '16px', height: '16px', marginRight: '6px', objectFit: 'contain' }}
+            />
+            <span>Promotion</span>
+          </div>
+          <span className="flow-step-separator">➔</span>
+
+          <div 
+            className={`flow-step-item ${campaignSubTab === 'review' ? 'active' : ''}`}
             onClick={() => { setCampaignSubTab('review'); setSuccessMsg(null); setError(null); }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            <Eye size={13} style={{ marginRight: '4px' }} />
-            Review Campaign ({reviewCamps.length})
-          </button>
-          <button 
-            className={`tab-button ${campaignSubTab === 'queue' ? 'active' : ''}`}
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '20px', 
+              height: '20px', 
+              borderRadius: '50%', 
+              backgroundColor: campaignSubTab === 'review' ? 'var(--color-accent)' : '#E5E7EB', 
+              color: campaignSubTab === 'review' ? '#fff' : 'var(--text-secondary)', 
+              fontSize: '11px', 
+              fontWeight: 'bold', 
+              marginRight: '6px' 
+            }}>3</span>
+            <img 
+              src="https://cdn-icons-png.flaticon.com/512/10266/10266547.png" 
+              alt="Content" 
+              style={{ width: '16px', height: '16px', marginRight: '6px', objectFit: 'contain' }}
+            />
+            <span>Content ({reviewCamps.length})</span>
+          </div>
+          <span className="flow-step-separator">➔</span>
+
+          <div 
+            className={`flow-step-item ${campaignSubTab === 'queue' ? 'active' : ''}`}
             onClick={() => { setCampaignSubTab('queue'); setSuccessMsg(null); setError(null); }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            <CheckSquare size={13} style={{ marginRight: '4px' }} />
-            Ready for Approval ({queueCamps.length})
-          </button>
-          <button 
-            className={`tab-button ${campaignSubTab === 'active' ? 'active' : ''}`}
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '20px', 
+              height: '20px', 
+              borderRadius: '50%', 
+              backgroundColor: campaignSubTab === 'queue' ? 'var(--color-accent)' : '#E5E7EB', 
+              color: campaignSubTab === 'queue' ? '#fff' : 'var(--text-secondary)', 
+              fontSize: '11px', 
+              fontWeight: 'bold', 
+              marginRight: '6px' 
+            }}>4</span>
+            <img 
+              src="https://cdn-icons-png.flaticon.com/512/18740/18740668.png" 
+              alt="Approval" 
+              style={{ width: '16px', height: '16px', marginRight: '6px', objectFit: 'contain' }}
+            />
+            <span>Approval ({queueCamps.length})</span>
+          </div>
+          <span className="flow-step-separator">➔</span>
+
+          <div 
+            className={`flow-step-item ${campaignSubTab === 'active' ? 'active' : ''}`}
             onClick={() => { setCampaignSubTab('active'); setSuccessMsg(null); setError(null); }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            <Send size={13} style={{ marginRight: '4px' }} />
-            Active Campaigns ({activeCamps.length})
-          </button>
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '20px', 
+              height: '20px', 
+              borderRadius: '50%', 
+              backgroundColor: campaignSubTab === 'active' ? 'var(--color-accent)' : '#E5E7EB', 
+              color: campaignSubTab === 'active' ? '#fff' : 'var(--text-secondary)', 
+              fontSize: '11px', 
+              fontWeight: 'bold', 
+              marginRight: '6px' 
+            }}>5</span>
+            <img 
+              src="https://cdn-icons-png.flaticon.com/512/547/547129.png" 
+              alt="Tracking" 
+              style={{ width: '16px', height: '16px', marginRight: '6px', objectFit: 'contain' }}
+            />
+            <span>Tracking ({activeCamps.length})</span>
+          </div>
+          
+          <span className="flow-step-separator" style={{ marginLeft: '12px', marginRight: '12px' }}>|</span>
           <button 
             className={`tab-button ${campaignSubTab === 'history' ? 'active' : ''}`}
+            style={{ padding: '2px 10px', fontSize: '13px', border: 'none', background: 'none', height: 'auto' }}
             onClick={() => { setCampaignSubTab('history'); setSuccessMsg(null); setError(null); }}
           >
-            <Clock size={13} style={{ marginRight: '4px' }} />
-            Campaign History ({historyCamps.length})
+            <span>History ({historyCamps.length})</span>
           </button>
         </div>
 
@@ -1136,7 +1358,7 @@ export default function App() {
                       <LoadingSpinner label="Loading audience review and promotion context..." />
                     </div>
                   ) : !prepareContext ? (
-                    <div className="card fade-in" style={{ margin: 0, borderLeft: '4px solid var(--color-accent)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '32px', textAlign: 'center' }}>
+                    <div className="card fade-in" style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '32px', textAlign: 'center' }}>
                       <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                         {(selectedOpp.type || '').replace('_', ' ')} — Ready to Analyze
                       </div>
@@ -1161,7 +1383,7 @@ export default function App() {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {/* Step 1 & 2: Audience Review Card */}
-                      <div className="card" style={{ margin: 0, borderLeft: '4px solid var(--color-accent)' }}>
+                      <div className="card" style={{ margin: 0 }}>
                         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '12px' }}>
                           <span className="badge badge-primary" style={{ fontSize: '9px' }}>Step 1: Audience Review</span>
                           <h3 style={{ fontSize: '14.5px', fontWeight: 700, marginTop: '6px' }}>Target Audience Analysis</h3>
@@ -1270,7 +1492,7 @@ export default function App() {
 
                       {/* Step 3: Promotion Review Card */}
                       {prepareContext.recommended_promotion && (
-                        <div className="card" style={{ margin: 0, borderLeft: '4px solid var(--color-success)', backgroundColor: '#fff' }}>
+                        <div className="card" style={{ margin: 0, backgroundColor: '#fff' }}>
                           <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '12px' }}>
                             <span className="badge badge-success" style={{ fontSize: '9px' }}>Step 2: Promotion Eligibility</span>
                             <h3 style={{ fontSize: '14.5px', fontWeight: 700, marginTop: '6px' }}>Recommended Promotion</h3>
@@ -1292,9 +1514,9 @@ export default function App() {
                           </div>
 
                           <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
-                            <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>🤖 Why Xenia Selected This Promotion:</strong>
+                            <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>Selection Rationale:</strong>
                             
-                            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.5, backgroundColor: 'var(--color-accent-light)', borderLeft: '3px solid var(--color-accent)', padding: '8px 10px', borderRadius: '4px' }}>
+                            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.5, backgroundColor: 'var(--color-accent-light)', border: '1px solid #BFDBFE', padding: '8px 10px', borderRadius: '4px' }}>
                               <strong>{prepareContext.recommended_promotion.promo_code}</strong> was selected because <strong>{Math.round(65 + (prepareContext.recommended_promotion.promo_code.charCodeAt(0) % 20))}%</strong> of the target audience belongs to the <strong>{selectedOpp?.type ? (selectedOpp.type.charAt(0).toUpperCase() + selectedOpp.type.slice(1)).replace('_', ' ') : 'At Risk'}</strong> segment, the promotion has generated <strong>{prepareContext.recommended_promotion.historical_performance?.avg_roi_pct || '12.8'}x</strong> ROI in previous reactivation campaigns, and it matches the <strong>{prepareContext.recommended_promotion.applicable_categories}</strong> category affinity of the selected shoppers.
                             </div>
 
@@ -1321,54 +1543,78 @@ export default function App() {
                             <span>Browse All Shoppers</span>
                           </button>
                         </div>
-                        <table className="enterprise-table" style={{ fontSize: '11.5px' }}>
-                          <thead>
-                            <tr>
-                              <th>Name</th>
-                              <th>City</th>
-                              <th>Selection Reason</th>
-                              <th>Email</th>
-                              <th>Phone</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {prepareContext.eligible_shoppers.slice(0, 5).map((cust: any) => (
-                              <tr key={cust.customer_id}>
-                                <td style={{ fontWeight: 600 }}>{cust.name}</td>
-                                <td>{cust.city}</td>
-                                <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{getSelectionReason(cust, selectedOpp?.type || '')}</td>
-                                <td>{cust.email}</td>
-                                <td>{cust.phone}</td>
+                        <div className="table-container" style={{ margin: 0 }}>
+                          <table className="enterprise-table" style={{ fontSize: '11.5px' }}>
+                            <thead>
+                              <tr>
+                                <th>Name</th>
+                                <th>City</th>
+                                <th>Selection Reason</th>
+                                <th>Email</th>
+                                <th>Phone</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {prepareContext.eligible_shoppers.slice(0, 5).map((cust: any) => (
+                                <tr key={cust.customer_id}>
+                                  <td style={{ fontWeight: 600 }}>{cust.name}</td>
+                                  <td>{cust.city}</td>
+                                  <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{getSelectionReason(cust, selectedOpp?.type || '')}</td>
+                                  <td>{cust.email}</td>
+                                  <td>{cust.phone}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
 
                       {/* Step 4: Configure Goal & Call AI */}
-                      <div className="card" style={{ margin: 0, borderLeft: '4px solid var(--color-accent)' }}>
+                      <div className="card" style={{ margin: 0 }}>
                         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '12px' }}>
                           <span className="badge badge-primary" style={{ fontSize: '9px' }}>Step 3: Content Drafting</span>
-                          <h3 style={{ fontSize: '14.5px', fontWeight: 700, marginTop: '6px' }}>Configure Goal Formulation for Xenia AI</h3>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                            <img 
+                              src="https://cdn-icons-png.flaticon.com/512/17653/17653523.png" 
+                              alt="AI Logo" 
+                              style={{ width: '18px', height: '18px', objectFit: 'contain' }} 
+                            />
+                            <h3 style={{ fontSize: '14.5px', fontWeight: 700, margin: 0 }}>Xenia Campaign Content Creation AI</h3>
+                          </div>
                         </div>
                         
-                        <div className="form-group">
-                          <textarea 
-                            className="form-textarea" 
-                            value={goalInput}
-                            onChange={e => setGoalInput(e.target.value)}
-                            style={{ height: '60px', fontSize: '12.5px' }}
-                          />
-                        </div>
+                        {!planning ? (
+                          <>
+                            <div className="form-group">
+                              <textarea 
+                                className="form-textarea" 
+                                value={goalInput}
+                                onChange={e => setGoalInput(e.target.value)}
+                                style={{ height: '60px', fontSize: '12.5px' }}
+                                placeholder="Describe the campaign goal..."
+                              />
+                            </div>
 
-                        <div className="flex-between" style={{ marginTop: '12px', alignItems: 'center' }}>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            *Xenia will draft channel-specific campaign content for review before launch.
+                            <div className="flex-between" style={{ marginTop: '12px', alignItems: 'center' }}>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                *Xenia will draft channel-specific campaign content for review before launch.
+                              </div>
+                              <button className="btn btn-primary" onClick={handleAnalyzeOpportunity} disabled={planning}>
+                                Analyze Audience & Draft Campaign
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 0', gap: '16px' }}>
+                            <div className="loader" style={{ margin: '0 auto' }}></div>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>Xenia AI is drafting your campaign.</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                This may take a few seconds. Please wait.
+                              </div>
+                            </div>
                           </div>
-                          <button className="btn btn-primary" onClick={handleAnalyzeOpportunity} disabled={planning}>
-                            {planning ? 'Analyzing Audience...' : 'Analyze Audience & Draft Campaign'}
-                          </button>
-                        </div>
+                        )}
                       </div>
 
                       {/* Transition button once copy is drafted */}
@@ -1439,7 +1685,7 @@ export default function App() {
               {selectedCamp && (selectedCamp.status === 'reviewed' || selectedCamp.status === 'draft') ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {/* Header */}
-                  <div className="card" style={{ margin: 0, borderLeft: '4px solid var(--color-accent)' }}>
+                  <div className="card" style={{ margin: 0 }}>
                     <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '14px' }}>
                       <span className="badge badge-primary" style={{ fontSize: '9px', marginBottom: '6px', display: 'inline-block' }}>Campaign Summary</span>
                       <h3 style={{ fontSize: '16px', fontWeight: 700 }}>{selectedCamp.name}</h3>
@@ -1452,7 +1698,7 @@ export default function App() {
                     <div className="form-group" style={{ marginBottom: '14px' }}>
                       <div className="flex-between" style={{ marginBottom: '6px', alignItems: 'center' }}>
                         <label className="form-label" style={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '10px', margin: 0 }}>
-                          Campaign Message Draft
+                          Campaign Message
                         </label>
                         {!isEditingMessage && (
                           <button 
@@ -1512,8 +1758,63 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <div className="sql-audit-block" style={{ padding: '12px', backgroundColor: '#fafafa', border: '1px solid var(--border-color)', fontSize: '12.5px', whiteSpace: 'pre-wrap', margin: 0, lineHeight: 1.5, borderRadius: '4px' }}>
-                          {selectedCamp.message_template || 'No message template available.'}
+                        <div style={{
+                          backgroundColor: '#efeae2',
+                          backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
+                          backgroundSize: 'contain',
+                          padding: '18px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          margin: 0
+                        }}>
+                          <div style={{
+                            backgroundColor: '#ffffff',
+                            color: '#111b21',
+                            padding: '10px 14px',
+                            borderRadius: '0px 12px 12px 12px',
+                            boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
+                            maxWidth: '85%',
+                            fontSize: '13px',
+                            lineHeight: 1.5,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                            position: 'relative'
+                          }}>
+                            <div style={{ whiteSpace: 'pre-wrap', color: '#111b21', fontWeight: 500 }}>
+                              {selectedCamp.message_template || 'No message template available.'}
+                            </div>
+                            
+                            {selectedCamp.promotion && (
+                              <div style={{
+                                border: '1px dashed var(--color-success)',
+                                backgroundColor: 'var(--color-success-bg)',
+                                padding: '8px 10px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '12px',
+                                marginTop: '4px'
+                              }}>
+                                <div>
+                                  <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>Promo Code</div>
+                                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-success)', fontFamily: 'var(--mono)' }}>{selectedCamp.promotion.promo_code}</div>
+                                </div>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-success)' }}>
+                                  {selectedCamp.promotion.discount_type === 'Percentage' ? `${selectedCamp.promotion.discount_value}% OFF` : `₹${selectedCamp.promotion.discount_value} OFF`}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '3px', alignSelf: 'flex-end', fontSize: '9px', color: '#667781', marginTop: '2px' }}>
+                              <span>09:41 AM</span>
+                              <span style={{ color: '#53bdeb' }}>✓✓</span>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1552,254 +1853,122 @@ export default function App() {
                         {mockupTab === 'whatsapp' && (
                           <div style={{
                             width: '320px',
-                            minHeight: '500px',
-                            backgroundColor: '#efeae2',
-                            backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
-                            border: '12px solid #1e1e1e',
-                            borderRadius: '36px',
-                            padding: '0 0 10px 0',
+                            minHeight: '400px',
+                            backgroundColor: '#FFFFFF',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '6px',
+                            padding: '0',
                             display: 'flex',
                             flexDirection: 'column',
-                            boxShadow: '0 12px 28px rgba(0,0,0,0.22)',
                             position: 'relative',
                             overflow: 'hidden',
-                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+                            fontFamily: 'var(--sans)'
                           }}>
-                            {/* Notch */}
-                            <div style={{
-                              position: 'absolute',
-                              top: '0',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              width: '110px',
-                              height: '16px',
-                              backgroundColor: '#1e1e1e',
-                              borderBottomLeftRadius: '12px',
-                              borderBottomRightRadius: '12px',
-                              zIndex: 10
-                            }} />
-
-                            {/* Status Bar */}
-                            <div style={{
-                              height: '24px',
-                              backgroundColor: '#008069',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              padding: '12px 16px 0 16px',
-                              color: '#fff',
-                              fontSize: '9px',
-                              fontWeight: 600,
-                              zIndex: 9
-                            }}>
-                              <span>09:41</span>
-                              <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '8px' }}>📶</span>
-                                <span style={{ fontSize: '8px' }}>📶</span>
-                                <span style={{ fontSize: '8px' }}>🔋</span>
-                              </div>
-                            </div>
-                            
                             {/* WhatsApp Header */}
                             <div style={{
-                              backgroundColor: '#008069',
-                              color: '#fff',
-                              padding: '8px 10px 10px 10px',
+                              backgroundColor: '#F3F4F6',
+                              color: 'var(--text-primary)',
+                              padding: '12px 16px',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '8px',
-                              boxShadow: '0 1.5px 3px rgba(0,0,0,0.15)',
+                              gap: '10px',
+                              borderBottom: '1px solid var(--border-color)',
                               zIndex: 5
                             }}>
                               <div style={{
-                                width: '28px',
-                                height: '28px',
+                                width: '32px',
+                                height: '32px',
                                 borderRadius: '50%',
-                                backgroundColor: '#fff',
-                                color: '#008069',
+                                backgroundColor: '#E5E7EB',
+                                color: 'var(--text-secondary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: '13px',
-                                fontWeight: 'bold',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                fontSize: '14px',
+                                fontWeight: 'bold'
                               }}>
                                 X
                               </div>
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                  <span style={{ fontSize: '11.5px', fontWeight: 600 }}>Xenia Offers</span>
-                                  {/* Verified Badge */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 600 }}>Xenia Campaigns</span>
                                   <span style={{ 
                                     display: 'inline-flex', 
                                     alignItems: 'center', 
                                     justifyContent: 'center', 
-                                    width: '10px', 
-                                    height: '10px', 
+                                    width: '12px', 
+                                    height: '12px', 
                                     borderRadius: '50%', 
-                                    backgroundColor: '#25d366', 
+                                    backgroundColor: '#16A34A', 
                                     color: '#fff', 
-                                    fontSize: '6px', 
+                                    fontSize: '8px', 
                                     fontWeight: 'bold' 
                                   }}>✓</span>
                                 </div>
-                                <span style={{ fontSize: '8px', color: '#80cbc4', display: 'flex', alignItems: 'center', gap: '2px', marginTop: '1px' }}>
-                                  <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#25d366', display: 'inline-block' }} />
-                                  online
+                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  WhatsApp Business Outreach
                                 </span>
                               </div>
                             </div>
  
                             {/* Message Area */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px', overflowY: 'auto' }}>
-                              <div style={{
-                                alignSelf: 'center',
-                                backgroundColor: 'rgba(255, 255, 255, 0.75)',
-                                color: '#4a4a4a',
-                                fontSize: '8px',
-                                padding: '2px 8px',
-                                borderRadius: '5px',
-                                fontWeight: 600,
-                                boxShadow: '0 0.5px 1px rgba(0,0,0,0.05)',
-                                textTransform: 'uppercase'
-                              }}>
-                                TODAY
-                              </div>
- 
+                            <div style={{ 
+                              flex: 1, 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: '12px', 
+                              padding: '16px', 
+                              backgroundColor: '#efeae2', 
+                              backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
+                              backgroundSize: 'contain',
+                              overflowY: 'auto' 
+                            }}>
                               <div style={{
                                 alignSelf: 'flex-start',
                                 backgroundColor: '#ffffff',
-                                color: '#303030',
-                                padding: '8px 10px 4px 10px',
-                                borderRadius: '0px 10px 10px 10px',
+                                color: '#111b21',
+                                padding: '10px 12px',
+                                borderRadius: '0px 12px 12px 12px',
+                                boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
                                 maxWidth: '90%',
-                                fontSize: '11px',
-                                lineHeight: 1.45,
-                                boxShadow: '0 1px 1px rgba(0,0,0,0.1)',
+                                fontSize: '13px',
+                                lineHeight: 1.5,
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '6px',
+                                gap: '8px',
                                 position: 'relative'
                               }}>
-                                {/* Message Top Tail */}
-                                <div style={{
-                                  position: 'absolute',
-                                  left: '-6px',
-                                  top: '0',
-                                  width: '0',
-                                  height: '0',
-                                  borderStyle: 'solid',
-                                  borderWidth: '0 6px 8px 0',
-                                  borderColor: 'transparent #ffffff transparent transparent'
-                                }} />
-
-                                {/* Interactive Offer Banner */}
-                                <div style={{
-                                  backgroundColor: '#eaeff2',
-                                  height: '95px',
-                                  borderRadius: '6px',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: '#516f7f',
-                                  border: '1px dashed #b2c2cd',
-                                  fontSize: '9.5px',
-                                  gap: '3px',
-                                  backgroundImage: 'linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%)',
-                                  overflow: 'hidden'
-                                }}>
-                                  <span style={{ fontWeight: 700, letterSpacing: '0.5px' }}>🌟 SPECIAL CAMPAIGN EVENT 🌟</span>
-                                  <span style={{ fontSize: '7.5px', color: '#1890ff', fontWeight: 600, backgroundColor: '#fff', padding: '1px 5px', borderRadius: '3px' }}>Xenia CRM Intelligent Offer</span>
-                                </div>
- 
-                                <div style={{ whiteSpace: 'pre-wrap', color: '#1a1a1a' }}>
+                                <div style={{ whiteSpace: 'pre-wrap', fontWeight: 500 }}>
                                   {selectedCamp.message_template || 'Message preview not available.'}
                                 </div>
  
                                 {/* Promo Code Coupon Card */}
                                 {selectedCamp.promotion && (
                                   <div style={{
-                                    border: '1.5px dashed var(--color-accent)',
-                                    backgroundColor: 'var(--color-accent-light)',
-                                    padding: '6px 8px',
-                                    borderRadius: '6px',
+                                    border: '1px dashed var(--color-success)',
+                                    backgroundColor: 'var(--color-success-bg)',
+                                    padding: '8px 10px',
+                                    borderRadius: '4px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    marginTop: '2px',
-                                    gap: '6px'
+                                    gap: '12px',
+                                    marginTop: '4px'
                                   }}>
                                     <div>
-                                      <div style={{ fontSize: '7px', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>Discount Code</div>
-                                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-accent)', fontFamily: 'var(--mono)' }}>{selectedCamp.promotion.promo_code}</div>
+                                      <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>Promo Code</div>
+                                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-success)', fontFamily: 'var(--mono)' }}>{selectedCamp.promotion.promo_code}</div>
                                     </div>
-                                    <div style={{ fontSize: '8px', fontWeight: 700, color: 'var(--color-success)', backgroundColor: 'var(--color-success-bg)', padding: '2px 4px', borderRadius: '4px', border: '1px solid var(--color-success-border)' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-success)' }}>
                                       {selectedCamp.promotion.discount_type === 'Percentage' ? `${selectedCamp.promotion.discount_value}% OFF` : `₹${selectedCamp.promotion.discount_value} OFF`}
                                     </div>
                                   </div>
                                 )}
  
-                                {/* WhatsApp Interactive Action Link */}
-                                <div style={{
-                                  borderTop: '1px solid #f2f2f2',
-                                  paddingTop: '6px',
-                                  marginTop: '2px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: '#00a5f4',
-                                  fontWeight: 700,
-                                  fontSize: '10px',
-                                  gap: '4px',
-                                  cursor: 'pointer'
-                                }}>
-                                  <span>🔗 Shop Now</span>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '3px', alignSelf: 'flex-end', fontSize: '9px', color: '#667781', marginTop: '2px' }}>
+                                  <span>09:41 AM</span>
+                                  <span style={{ color: '#53bdeb' }}>✓✓</span>
                                 </div>
- 
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '2px', alignSelf: 'flex-end', marginTop: '1px' }}>
-                                  <span style={{ fontSize: '7.5px', color: '#9e9e9e' }}>09:41 AM</span>
-                                  <span style={{ fontSize: '9px', color: '#4fc3f7', lineHeight: 1 }}>✓✓</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* WhatsApp Footer Input Bar */}
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '4px 8px',
-                              backgroundColor: 'transparent',
-                              zIndex: 5
-                            }}>
-                              <div style={{
-                                flex: 1,
-                                backgroundColor: '#fff',
-                                borderRadius: '20px',
-                                padding: '6px 12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                              }}>
-                                <span style={{ color: '#9e9e9e', fontSize: '11px', flex: 1 }}>Message</span>
-                                <span style={{ color: '#9e9e9e', fontSize: '11px' }}>📎</span>
-                              </div>
-                              <div style={{
-                                width: '30px',
-                                height: '30px',
-                                borderRadius: '50%',
-                                backgroundColor: '#008069',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#fff',
-                                fontSize: '12px',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                              }}>
-                                🎙️
                               </div>
                             </div>
                           </div>
@@ -1808,15 +1977,14 @@ export default function App() {
                         {mockupTab === 'email' && (
                           <div style={{
                             width: '100%',
-                            maxWidth: '480px',
+                            maxWidth: '520px',
                             backgroundColor: '#ffffff',
                             border: '1px solid var(--border-color)',
-                            borderRadius: '8px',
+                            borderRadius: '6px',
                             display: 'flex',
                             flexDirection: 'column',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                             overflow: 'hidden',
-                            fontFamily: '"Google Sans", Roboto, Helvetica, Arial, sans-serif'
+                            fontFamily: 'var(--sans)'
                           }}>
                             {/* Gmail Header */}
                             <div style={{
@@ -1834,16 +2002,12 @@ export default function App() {
                                 <span style={{ color: '#dadce0' }}>|</span>
                                 <span style={{ fontWeight: 600, color: '#3c4043' }}>Promotions</span>
                               </div>
-                              <div style={{ display: 'flex', gap: '10px', fontSize: '10px' }}>
-                                <span>🔍 Search</span>
-                                <span>⚙️</span>
-                              </div>
                             </div>
                             
                             {/* Subject */}
                             <div style={{
                               padding: '14px 16px',
-                              fontSize: '14px',
+                              fontSize: '13px',
                               color: '#202124',
                               borderBottom: '1px solid #f1f3f4',
                               fontWeight: 700,
@@ -1855,7 +2019,6 @@ export default function App() {
                                 <span style={{ backgroundColor: '#e8f0fe', color: '#1a73e8', fontSize: '8px', padding: '2px 5px', borderRadius: '3px', fontWeight: 600, textTransform: 'uppercase' }}>Inbox</span>
                                 <span>{selectedCamp.promotion ? `Exclusive: Use code ${selectedCamp.promotion.promo_code} for savings!` : "Personalized Offers Inside!"}</span>
                               </div>
-                              <span style={{ fontSize: '10px', color: '#5f6368', fontWeight: 'normal' }}>☆</span>
                             </div>
  
                             {/* Sender Info */}
@@ -1885,40 +2048,39 @@ export default function App() {
                               <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between' }}>
                                 <div>
                                   <strong style={{ color: '#202124' }}>Xenia CRM</strong> <span style={{ color: '#5f6368', fontSize: '10.5px' }}>&lt;offers@xenia-retail.in&gt;</span>
-                                  <div style={{ color: '#5f6368', fontSize: '9px', marginTop: '1px' }}>to me ▾</div>
                                 </div>
                                 <span style={{ color: '#5f6368', fontSize: '10px' }}>09:41 AM</span>
                               </div>
                             </div>
  
                             {/* Email Body HTML Template */}
-                            <div style={{ padding: '20px', backgroundColor: '#f4f6f8', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ padding: '20px', backgroundColor: '#F8FAFC', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                               <div style={{
                                 width: '100%',
                                 backgroundColor: '#ffffff',
-                                border: '1px solid #e0e4e8',
-                                borderRadius: '8px',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '6px',
                                 overflow: 'hidden',
                                 display: 'flex',
-                                flexDirection: 'column',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                flexDirection: 'column'
                               }}>
                                 {/* Brand Banner Header */}
                                 <div style={{
-                                  background: 'linear-gradient(135deg, var(--color-accent) 0%, #1d4ed8 100%)',
-                                  padding: '24px 16px',
+                                  backgroundColor: 'var(--color-accent-light)',
+                                  padding: '20px 16px',
                                   textAlign: 'center',
-                                  color: '#ffffff'
+                                  borderBottom: '1px solid var(--border-color)',
+                                  color: 'var(--color-accent)'
                                 }}>
-                                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, letterSpacing: '0.5px' }}>Xenia CRM</h2>
-                                  <span style={{ fontSize: '9px', opacity: 0.85, textTransform: 'uppercase', fontWeight: 600 }}>Personalized Customer Hub</span>
+                                  <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Xenia CRM</h2>
+                                  <span style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--color-accent)', opacity: 0.8 }}>Personalized Customer Hub</span>
                                 </div>
-
+ 
                                 <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                   <div style={{ color: '#202124', fontSize: '12px', fontWeight: 'bold' }}>
                                     Dear Customer,
                                   </div>
-
+ 
                                   <div style={{ color: '#3c4043', fontSize: '12px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                                     {selectedCamp.message_template || 'Email preview not available.'}
                                   </div>
@@ -1939,9 +2101,6 @@ export default function App() {
                                     }}>
                                       <span style={{ fontSize: '7.5px', textTransform: 'uppercase', color: 'var(--color-success)', fontWeight: 700 }}>Exclusive Coupon Code</span>
                                       <span style={{ fontSize: '20px', fontWeight: 900, color: 'var(--color-success)', fontFamily: 'var(--mono)', letterSpacing: '1.5px', margin: '2px 0' }}>{selectedCamp.promotion.promo_code}</span>
-                                      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                        Benefit: {selectedCamp.promotion.discount_type === 'Percentage' ? `${selectedCamp.promotion.discount_value}% OFF` : `INR ${selectedCamp.promotion.discount_value} OFF`}
-                                      </span>
                                     </div>
                                   )}
  
@@ -1954,8 +2113,7 @@ export default function App() {
                                       borderRadius: '6px',
                                       fontWeight: 'bold',
                                       fontSize: '11.5px',
-                                      display: 'inline-block',
-                                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                      display: 'inline-block'
                                     }}>
                                       Claim Promotion Now
                                     </a>
@@ -1970,8 +2128,7 @@ export default function App() {
                                     color: 'var(--text-muted)',
                                     lineHeight: 1.4
                                   }}>
-                                    You are receiving this personalized offer because you are a valued loyalty shopper at Xenia retail partners.<br />
-                                    <a href="#unsubscribe" style={{ color: 'var(--color-accent)', textDecoration: 'underline' }}>Unsubscribe from communications</a>
+                                    You are receiving this personalized offer because you are a valued loyalty shopper.
                                   </div>
                                 </div>
                               </div>
@@ -1982,122 +2139,76 @@ export default function App() {
                         {mockupTab === 'sms' && (
                           <div style={{
                             width: '280px',
-                            minHeight: '440px',
+                            minHeight: '380px',
                             backgroundColor: '#ffffff',
-                            border: '12px solid #333333',
-                            borderRadius: '32px',
-                            padding: '0 0 10px 0',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '6px',
+                            padding: '0',
                             display: 'flex',
                             flexDirection: 'column',
-                            boxShadow: '0 12px 28px rgba(0,0,0,0.22)',
                             position: 'relative',
                             overflow: 'hidden',
-                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+                            fontFamily: 'var(--sans)'
                           }}>
-                            {/* Notch */}
-                            <div style={{
-                              position: 'absolute',
-                              top: '0',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              width: '100px',
-                              height: '14px',
-                              backgroundColor: '#333333',
-                              borderBottomLeftRadius: '10px',
-                              borderBottomRightRadius: '10px',
-                              zIndex: 10
-                            }} />
-
-                            {/* Status Bar */}
-                            <div style={{
-                              height: '22px',
-                              backgroundColor: '#f6f6f6',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              padding: '10px 14px 0 14px',
-                              color: '#000',
-                              fontSize: '8.5px',
-                              fontWeight: 600,
-                              zIndex: 9
-                            }}>
-                              <span>09:41</span>
-                              <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '8px' }}>📶</span>
-                                <span style={{ fontSize: '8px' }}>🔋</span>
-                              </div>
-                            </div>
- 
                             {/* SMS Header */}
                             <div style={{
-                              backgroundColor: '#f6f6f6',
-                              borderBottom: '1px solid #e0e0e0',
-                              padding: '8px 10px 8px 10px',
-                              textAlign: 'center',
-                              fontSize: '10px',
-                              fontWeight: 'bold',
-                              color: '#000000',
+                              backgroundColor: '#F3F4F6',
+                              borderBottom: '1px solid var(--border-color)',
+                              padding: '12px 16px',
                               display: 'flex',
-                              flexDirection: 'column',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '10px'
                             }}>
                               <div style={{
-                                width: '22px',
-                                height: '22px',
+                                width: '28px',
+                                height: '28px',
                                 borderRadius: '50%',
-                                backgroundColor: '#a1a1aa',
+                                backgroundColor: '#E5E7EB',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#fff',
-                                fontSize: '10px',
+                                color: 'var(--text-secondary)',
+                                fontSize: '12px',
                                 fontWeight: 'bold'
                               }}>
-                                X
+                                SMS
                               </div>
-                              <span style={{ fontSize: '9.5px', color: '#1c1c1e' }}>XN-XENIA</span>
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>XN-XENIA</span>
                             </div>
  
                             {/* Chat thread */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px', backgroundColor: '#ffffff' }}>
-                              <div style={{ alignSelf: 'center', fontSize: '8px', color: '#8e8e93', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 600 }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', backgroundColor: '#ffffff', gap: '12px' }}>
+                              <div style={{ alignSelf: 'center', fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>
                                 Today 09:41 AM
                               </div>
                               
                               {/* Message bubble */}
                               <div style={{
                                 alignSelf: 'flex-start',
-                                backgroundColor: '#e9e9eb',
-                                color: '#000000',
-                                padding: '8px 12px',
-                                borderRadius: '16px',
-                                maxWidth: '85%',
-                                fontSize: '11px',
-                                lineHeight: 1.4,
-                                position: 'relative'
+                                backgroundColor: '#EFF6FF',
+                                color: 'var(--text-primary)',
+                                border: '1px solid #BFDBFE',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                maxWidth: '90%',
+                                fontSize: '12px',
+                                lineHeight: 1.45
                               }}>
-                                {/* iMessage style bubble text with blue links */}
                                 <div style={{ whiteSpace: 'pre-wrap' }}>
                                   {(() => {
                                     const text = selectedCamp.message_template || 'SMS preview not available.';
-                                    // Highlight links in blue, underline
                                     const parts = text.split(/(https?:\/\/[^\s]+)/g);
                                     return parts.map((part, idx) => {
                                       if (part.match(/^https?:\/\//)) {
-                                        return <span key={idx} style={{ color: '#007aff', textDecoration: 'underline', fontWeight: 500 }}>{part}</span>;
+                                        return <span key={idx} style={{ color: 'var(--color-accent)', textDecoration: 'underline', fontWeight: 500 }}>{part}</span>;
                                       }
                                       return part;
                                     });
                                   })()}
                                 </div>
                               </div>
-                              <span style={{ fontSize: '7.5px', color: '#8e8e93', marginTop: '4px', marginLeft: '6px', fontWeight: 500 }}>Delivered</span>
                             </div>
- 
-                            {/* Apple style Message Reply Bar */}
                             <div style={{
-                              backgroundColor: '#f6f6f6',
                               borderTop: '1px solid #e0e0e0',
                               padding: '6px 10px',
                               display: 'flex',
@@ -2126,7 +2237,7 @@ export default function App() {
                   {/* Simulation projections from DB */}
                   {selectedCamp.simulation && (
                     <div className="card" style={{ margin: 0 }}>
-                      <div className="card-title">Campaign Preview Projections</div>
+                      <div className="card-title">Expected Campaign Results</div>
                       <div className="grid-4" style={{ gap: '10px' }}>
                         <div style={{ padding: '10px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: '#fafafa' }}>
                           <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Predicted Reach</span>
@@ -2153,7 +2264,7 @@ export default function App() {
                   {/* Why These Numbers? Explainability */}
                   {selectedCamp.simulation && (
                     <div className="card" style={{ margin: 0 }}>
-                      <div className="card-title">Why These Numbers?</div>
+                      <div className="card-title">Campaign Forecast</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11.5px', color: 'var(--text-secondary)' }}>
                         <div>
                           <strong style={{ color: 'var(--text-primary)' }}>Expected Reach ({selectedCamp.simulation.predicted_reach} shoppers):</strong>
@@ -2179,8 +2290,8 @@ export default function App() {
 
                   {/* Why This Promotion Was Recommended */}
                   {selectedCamp.promotion && (
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid var(--color-success)' }}>
-                      <div className="card-title" style={{ color: 'var(--color-success)', fontWeight: 700 }}>Why This Promotion Was Recommended</div>
+                    <div className="card" style={{ margin: 0 }}>
+                      <div className="card-title" style={{ fontWeight: 700 }}>Why This Promotion Was Recommended</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
                         <div>
                           <strong>Category Match:</strong> {selectedCamp.promotion.applicable_categories} shoppers represent 62% of the target audience.
@@ -2303,7 +2414,7 @@ export default function App() {
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 600 }}>Campaign Message Draft</label>
+                      <label className="form-label" style={{ fontWeight: 600 }}>Campaign Message</label>
                       <div className="sql-audit-block" style={{ padding: '10px', backgroundColor: '#fafafa', border: '1px solid var(--border-color)', fontSize: '12px', whiteSpace: 'pre-wrap', margin: 0 }}>
                         {selectedCamp.message_template}
                       </div>
@@ -2477,32 +2588,47 @@ export default function App() {
                               return (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <FunnelRow label="Total Dispatched" count={sent} percent={100} color="var(--color-accent)" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {delPct}% delivery rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {delPct}% delivery rate
+                                    </span>
                                     <span>Drop-off: {100 - delPct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Delivered" count={delivered} percent={sent ? (delivered / sent) * 100 : 0} color="#0284c7" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {opePct}% open rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {opePct}% open rate
+                                    </span>
                                     <span>Drop-off: {100 - opePct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Opened" count={opened} percent={sent ? (opened / sent) * 100 : 0} color="#0d9488" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {cliPct}% click rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {cliPct}% click rate
+                                    </span>
                                     <span>Drop-off: {100 - cliPct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Clicked" count={clicked} percent={sent ? (clicked / sent) * 100 : 0} color="#ea580c" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {proPct}% promo application</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {proPct}% promo application
+                                    </span>
                                     <span>Drop-off: {100 - proPct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Promo Applied" count={promo} percent={sent ? (promo / sent) * 100 : 0} color="#8b5cf6" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {purPct}% purchase rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {purPct}% purchase rate
+                                    </span>
                                     <span>Drop-off: {100 - purPct}%</span>
                                   </div>
                                   
@@ -2529,7 +2655,7 @@ export default function App() {
                                     <th>Status Pipeline</th>
                                     <th>Selection Reason</th>
                                     <th className="mono-align">Attributed Order</th>
-                                    <th style={{ width: '220px' }}>Simulation Hook Sandbox</th>
+                                    <th style={{ width: '360px' }}>Action Simulation</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2550,30 +2676,40 @@ export default function App() {
                                       </td>
                                       <td onClick={e => e.stopPropagation()}>
                                         {log.status !== 'purchased' && log.status !== 'failed' && (
-                                          <div style={{ display: 'flex', gap: '4px' }}>
-                                            {log.status !== 'delivered' && log.status !== 'opened' && log.status !== 'clicked' && log.status !== 'promo_applied' && (
+                                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                            {log.status === 'sent' && (
                                               <button 
                                                 className="btn btn-secondary" 
-                                                style={{ padding: '2px 6px', fontSize: '10.5px' }} 
+                                                style={{ padding: '2px 6px', fontSize: '10.5px', height: 'auto' }} 
                                                 onClick={() => handleTriggerAttributionEvent(log.communication_id, 'delivered')}
                                                 disabled={simulatingEvent}
                                               >
                                                 Sim Delivery
                                               </button>
                                             )}
-                                            {log.status === 'clicked' && (
+                                            {['sent', 'delivered', 'opened'].includes(log.status) && (
                                               <button 
                                                 className="btn btn-secondary" 
-                                                style={{ padding: '2px 6px', fontSize: '10.5px', backgroundColor: '#8b5cf6', color: '#fff', border: 'none' }} 
+                                                style={{ padding: '2px 6px', fontSize: '10.5px', height: 'auto', backgroundColor: '#e0f2fe', color: '#0369a1', borderColor: '#bae6fd' }} 
+                                                onClick={() => handleTriggerAttributionEvent(log.communication_id, 'clicked')}
+                                                disabled={simulatingEvent}
+                                              >
+                                                Link Opened
+                                              </button>
+                                            )}
+                                            {['sent', 'delivered', 'opened', 'clicked'].includes(log.status) && (
+                                              <button 
+                                                className="btn btn-secondary" 
+                                                style={{ padding: '2px 6px', fontSize: '10.5px', height: 'auto', backgroundColor: '#f3e8ff', color: '#6b21a8', borderColor: '#e9d5ff' }} 
                                                 onClick={() => handleTriggerAttributionEvent(log.communication_id, 'promo_applied')}
                                                 disabled={simulatingEvent}
                                               >
-                                                Apply Promo
+                                                Promo Code Used
                                               </button>
                                             )}
                                             <button 
                                               className="btn btn-primary" 
-                                              style={{ padding: '2px 6px', fontSize: '10.5px', backgroundColor: 'var(--color-success)' }} 
+                                              style={{ padding: '2px 6px', fontSize: '10.5px', height: 'auto', backgroundColor: 'var(--color-success)', borderColor: 'var(--color-success)' }} 
                                               onClick={() => handleTriggerAttributionEvent(log.communication_id, 'purchased')}
                                               disabled={simulatingEvent}
                                             >
@@ -2633,7 +2769,7 @@ export default function App() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         
                         {/* Executive Post-Mortem Report Card */}
-                        <div className="card" style={{ margin: 0, padding: '14px', borderLeft: '4px solid var(--color-accent)', backgroundColor: 'var(--color-accent-light)' }}>
+                        <div className="card" style={{ margin: 0, padding: '14px', border: '1px solid #BFDBFE', backgroundColor: 'var(--color-accent-light)' }}>
                           <h4 style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '6px' }}>
                             📊 Executive Post-Mortem Report
                           </h4>
@@ -2643,7 +2779,7 @@ export default function App() {
                         </div>
 
                         {/* What We Learned Card */}
-                        <div className="card" style={{ margin: 0, padding: '14px', borderLeft: '4px solid var(--color-success)', backgroundColor: 'var(--color-success-bg)' }}>
+                        <div className="card" style={{ margin: 0, padding: '14px', border: '1px solid var(--color-success-border)', backgroundColor: 'var(--color-success-bg)' }}>
                           <h4 style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-success)', marginBottom: '8px' }}>
                             💡 What We Learned
                           </h4>
@@ -2767,32 +2903,47 @@ export default function App() {
                               return (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <FunnelRow label="Total Dispatched" count={sent} percent={100} color="var(--color-accent)" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {delPct}% delivery rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {delPct}% delivery rate
+                                    </span>
                                     <span>Drop-off: {100 - delPct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Delivered" count={delivered} percent={sent ? (delivered / sent) * 100 : 0} color="#0284c7" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {opePct}% open rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {opePct}% open rate
+                                    </span>
                                     <span>Drop-off: {100 - opePct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Opened" count={opened} percent={sent ? (opened / sent) * 100 : 0} color="#0d9488" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {cliPct}% click rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {cliPct}% click rate
+                                    </span>
                                     <span>Drop-off: {100 - cliPct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Clicked" count={clicked} percent={sent ? (clicked / sent) * 100 : 0} color="#ea580c" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {proPct}% promo application</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {proPct}% promo application
+                                    </span>
                                     <span>Drop-off: {100 - proPct}%</span>
                                   </div>
                                   
                                   <FunnelRow label="Promo Applied" count={promo} percent={sent ? (promo / sent) * 100 : 0} color="#8b5cf6" />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '130px', paddingRight: '90px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                                    <span>⬇️ {purPct}% purchase rate</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '142px', paddingRight: '72px', fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                                      {purPct}% purchase rate
+                                    </span>
                                     <span>Drop-off: {100 - purPct}%</span>
                                   </div>
                                   
@@ -2895,7 +3046,9 @@ export default function App() {
                     Shopper Snapshot
                   </h4>
                   {loadingShopperDrawer ? (
-                    <div style={{ padding: '10px', fontSize: '12px', color: 'var(--text-muted)' }}><RefreshCw className="spin" size={12} /> Loading snapshot details...</div>
+                    <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '12px' }}>
+                      <RefreshCw size={14} className="spin" /> Loading snapshot details...
+                    </div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px', fontSize: '12px' }}>
                       <div><span style={{ color: 'var(--text-muted)' }}>Name:</span> <strong style={{ color: 'var(--text-primary)' }}>{selectedRecipient.customer.name}</strong></div>
@@ -3031,7 +3184,7 @@ export default function App() {
 
                 {/* Revenue Attribution Summary Card */}
                 {selectedRecipient.status === 'purchased' && selectedRecipient.attributed_order && (
-                  <div className="card" style={{ margin: 0, padding: '14px', borderLeft: '4px solid var(--color-success)', backgroundColor: 'var(--color-success-bg)' }}>
+                  <div className="card" style={{ margin: 0, padding: '14px', border: '1px solid var(--color-success-border)', backgroundColor: 'var(--color-success-bg)' }}>
                     <h4 style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-success)', marginBottom: '8px', borderBottom: '1px solid var(--color-success-border)', paddingBottom: '4px' }}>
                       Attribution Verification Proof
                     </h4>
@@ -3076,42 +3229,44 @@ export default function App() {
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto' }}>
-                <table className="enterprise-table" style={{ fontSize: '12px' }}>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>City</th>
-                      <th>Selection Reason</th>
-                      <th className="mono-align">LTV (Spend)</th>
-                      <th>Last Purchase Date</th>
-                      <th>Churn Probability</th>
-                      <th>Preferred Channel</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {prepareContext.eligible_shoppers.map((shopper: any) => (
-                      <tr key={shopper.customer_id}>
-                        <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>{shopper.name}</td>
-                        <td>{shopper.city}</td>
-                        <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{getSelectionReason(shopper, selectedOpp?.type || '')}</td>
-                        <td className="mono-align" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          INR {shopper.lifetime_value.toLocaleString('en-IN')}
-                        </td>
-                        <td>
-                          {shopper.last_purchase_days} days ago
-                        </td>
-                        <td>
-                          <span className={`badge ${shopper.churn_probability >= 0.7 ? 'badge-danger' : shopper.churn_probability >= 0.4 ? 'badge-warning' : 'badge-success'}`}>
-                            {Math.round(shopper.churn_probability * 100)}%
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge badge-primary">{shopper.preferred_channel}</span>
-                        </td>
+                <div className="table-container" style={{ margin: 0 }}>
+                  <table className="enterprise-table" style={{ fontSize: '12px' }}>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>City</th>
+                        <th>Selection Reason</th>
+                        <th className="mono-align">LTV (Spend)</th>
+                        <th>Last Purchase Date</th>
+                        <th>Churn Probability</th>
+                        <th>Preferred Channel</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {prepareContext.eligible_shoppers.map((shopper: any) => (
+                        <tr key={shopper.customer_id}>
+                          <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>{shopper.name}</td>
+                          <td>{shopper.city}</td>
+                          <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{getSelectionReason(shopper, selectedOpp?.type || '')}</td>
+                          <td className="mono-align" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                            INR {shopper.lifetime_value.toLocaleString('en-IN')}
+                          </td>
+                          <td>
+                            {shopper.last_purchase_days} days ago
+                          </td>
+                          <td>
+                            <span className={`badge ${shopper.churn_probability >= 0.7 ? 'badge-danger' : shopper.churn_probability >= 0.4 ? 'badge-warning' : 'badge-success'}`}>
+                              {Math.round(shopper.churn_probability * 100)}%
+                            </span>
+                          </td>
+                          <td>
+                            <span className="badge badge-primary">{shopper.preferred_channel}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
@@ -3129,15 +3284,40 @@ export default function App() {
   // Helper Conversion Funnel Bar Component
   function FunnelRow({ label, count, percent, color }: { label: string; count: number; percent: number; color: string }) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ width: '120px', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</div>
-        <div style={{ flex: 1, backgroundColor: '#f4f4f5', height: '18px', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
-          <div style={{ backgroundColor: color, width: `${percent}%`, height: '100%', transition: 'width 0.3s ease' }} />
-          <span style={{ position: 'absolute', left: '8px', top: '1px', fontSize: '10px', fontWeight: 'bold', color: percent > 15 ? '#ffffff' : 'var(--text-primary)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+        <div style={{ width: '130px', fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</div>
+        <div style={{ 
+          flex: 1, 
+          backgroundColor: '#F3F4F6', 
+          height: '24px', 
+          borderRadius: '12px', 
+          overflow: 'hidden', 
+          position: 'relative',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)'
+        }}>
+          <div style={{ 
+            backgroundColor: color, 
+            width: `${percent}%`, 
+            height: '100%', 
+            borderRadius: '12px', 
+            transition: 'width 0.4s ease',
+            boxShadow: '0 1px 1.5px rgba(0,0,0,0.05)'
+          }} />
+          <span style={{ 
+            position: 'absolute', 
+            left: '12px', 
+            top: '50%', 
+            transform: 'translateY(-50%)', 
+            fontSize: '11px', 
+            fontWeight: 700, 
+            color: percent > 10 ? '#ffffff' : 'var(--text-primary)'
+          }}>
             {Math.round(percent)}%
           </span>
         </div>
-        <div className="mono-align" style={{ width: '80px', fontWeight: 600, fontSize: '12px' }}>{count}</div>
+        <div className="mono-align" style={{ width: '60px', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
+          {count.toLocaleString('en-IN')}
+        </div>
       </div>
     );
   }
@@ -3441,9 +3621,7 @@ export default function App() {
 
       if (startDate && endDate) {
         return `Promotion Active from ${formatDate(startDate)} until ${formatDate(endDate)}`;
-      } else if (startDate) {
-        return `Promotion Active from ${formatDate(startDate)} (Indefinite End)`;
-      } else if (endDate) {
+} else if (endDate) {
         return `Promotion Active until ${formatDate(endDate)} (Immediate Start)`;
       }
       return 'Promotion Active indefinitely (Immediate Start, no expiration)';
@@ -3476,25 +3654,52 @@ export default function App() {
     };
 
     return (
-      <div className="fade-in">
-        <div className="flex-between" style={{ marginBottom: '14px' }}>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Manage active promotion codes and performance attributes.</p>
-          <button className="btn btn-accent" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleOpenCreateDrawer}>
-            <Plus size={14} /> <span>Create Promotion</span>
+      <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Workspace Subheader — main title is in topbar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px' }}>
+            Configure active coupon incentives, discount rules, and promotional campaigns. Manage eligibility parameters and analyze historical ROI.
+          </p>
+          <button className="btn btn-primary" onClick={handleOpenCreateDrawer}>
+            <Plus size={16} />
+            <span>Create Promotion</span>
           </button>
         </div>
-        {successMsg && <div className="card" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', padding: '10px' }}>{successMsg}</div>}
-        {error && <div className="card" style={{ backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', padding: '10px' }}>{error}</div>}
+
+        {successMsg && (
+          <div className="badge badge-success" style={{ padding: '10px 14px', fontSize: '13px', width: '100%', textTransform: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{successMsg}</span>
+            <span style={{ cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setSuccessMsg(null)}>×</span>
+          </div>
+        )}
+        {error && (
+          <div className="badge badge-danger" style={{ padding: '10px 14px', fontSize: '13px', width: '100%', textTransform: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{error}</span>
+            <span style={{ cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setError(null)}>×</span>
+          </div>
+        )}
+
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}><RefreshCw className="spin" /> Loading promotions...</div>
+          <SkeletonLoader type="table" />
+        ) : promotionsList.length === 0 ? (
+          <EmptyState 
+            title="No Promotions Formulated" 
+            description="Create your first discount promo code to attach to customer win-back or reactivation campaigns."
+            actionText="Create Promotion"
+            onAction={handleOpenCreateDrawer}
+          />
         ) : (
-          <div className="table-container">
+          <div className="table-container" style={{ margin: 0 }}>
             <table className="enterprise-table">
               <thead>
                 <tr>
-                  <th>Code</th><th>Details</th><th>Eligibility</th>
-                  <th className="mono-align">Revenue</th><th className="mono-align">ROI</th>
-                  <th>Status</th><th>Actions</th>
+                  <th style={{ minWidth: '180px' }}>Promo Code & Name</th>
+                  <th>Discount Rule</th>
+                  <th>Eligibility Rules</th>
+                  <th className="mono-align">Revenue Attributed</th>
+                  <th className="mono-align">Campaign ROI</th>
+                  <th>Status</th>
+                  <th style={{ width: '100px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -3503,28 +3708,42 @@ export default function App() {
                     <td>
                       <span 
                         className="badge badge-primary" 
-                        style={{ cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }} 
+                        style={{ cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold', marginBottom: '4px' }} 
                         onClick={() => handleOpenPromotionIntelligence(promo.promo_code)}
                       >
                         {promo.promo_code}
                       </span>
-                      <div style={{fontWeight:600}}>{promo.name}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{promo.name}</div>
                     </td>
                     <td>
-                      <div><strong>{promo.discount_type}</strong></div>
-                      <div>Value: {promo.discount_type === 'Percentage' ? `${promo.discount_value}%` : `₹${promo.discount_value}`}</div>
+                      <div style={{ fontWeight: 600 }}>{promo.discount_type}</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '2px' }}>
+                        Value: {promo.discount_type === 'Percentage' ? `${promo.discount_value}%` : `₹${promo.discount_value}`}
+                      </div>
                     </td>
                     <td>
-                      <div>Cats: <span className="badge badge-neutral" style={{ fontSize: '9px' }}>{promo.applicable_categories}</span></div>
-                      <div>Cities: <span className="badge badge-neutral" style={{ fontSize: '9px' }}>{promo.applicable_cities}</span></div>
+                      <div style={{ fontSize: '13px' }}>Categories: <span className="badge badge-neutral" style={{ fontSize: '10px', padding: '2px 4px' }}>{promo.applicable_categories}</span></div>
+                      <div style={{ fontSize: '13px', marginTop: '4px' }}>Cities: <span className="badge badge-neutral" style={{ fontSize: '10px', padding: '2px 4px' }}>{promo.applicable_cities}</span></div>
                     </td>
-                    <td className="mono-align">₹{promo.revenue_generated.toLocaleString('en-IN')}</td>
-                    <td className="mono-align">{promo.roi_generated?.toFixed(1)}x</td>
-                    <td><button className={`badge ${promo.active ? 'badge-success' : 'badge-neutral'}`} onClick={() => handleToggleStatus(promo.promotion_id)}>{promo.active ? 'Active' : 'Inactive'}</button></td>
+                    <td className="mono-align" style={{ fontWeight: 600 }}>₹{promo.revenue_generated.toLocaleString('en-IN')}</td>
+                    <td className="mono-align" style={{ fontWeight: 600, color: 'var(--color-success)' }}>{promo.roi_generated?.toFixed(1)}x</td>
                     <td>
-                      <div style={{display:'flex', gap:'4px'}}>
-                        <button className="btn btn-secondary" style={{padding:'4px'}} onClick={() => handleOpenEditDrawer(promo)}><Edit size={12}/></button>
-                        <button className="btn btn-secondary" style={{padding:'4px', color:'var(--color-danger)'}} onClick={() => handleDelete(promo.promotion_id)}><Trash2 size={12}/></button>
+                      <button 
+                        className={`badge ${promo.active ? 'badge-success' : 'badge-neutral'}`} 
+                        onClick={() => handleToggleStatus(promo.promotion_id)}
+                        style={{ cursor: 'pointer', border: 'none' }}
+                      >
+                        {promo.active ? 'Active' : 'Inactive'}
+                      </button>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button className="btn btn-secondary" style={{ padding: '6px', height: '32px', width: '32px' }} onClick={() => handleOpenEditDrawer(promo)}>
+                          <Edit size={14} />
+                        </button>
+                        <button className="btn btn-secondary" style={{ padding: '6px', height: '32px', width: '32px', color: 'var(--color-danger)' }} onClick={() => handleDelete(promo.promotion_id)}>
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -3533,58 +3752,59 @@ export default function App() {
             </table>
           </div>
         )}
+
         {promoDrawerOpen && (
           <div className="drawer-backdrop" onClick={() => setPromoDrawerOpen(false)}>
-            <div className="drawer-container" style={{ width: '40%', minWidth: '450px' }} onClick={e => e.stopPropagation()}>
+            <div className="drawer-container" style={{ width: '40%', minWidth: '480px' }} onClick={e => e.stopPropagation()}>
               <div className="drawer-header">
-                <h3>{editingPromo ? 'Edit Promotion' : 'Create Promotion'}</h3>
-                <button onClick={() => setPromoDrawerOpen(false)}><X size={18}/></button>
+                <h3 style={{ fontSize: '18px', fontWeight: 600 }}>{editingPromo ? 'Modify Promotion Code' : 'Formulate New Promotion'}</h3>
+                <button onClick={() => setPromoDrawerOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20}/></button>
               </div>
-              <div className="drawer-body" style={{ padding: '20px', overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="drawer-body" style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   
                   {/* SECTION 1: PROMOTION DETAILS */}
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '10px' }}>
-                      1. Promotion Details
+                  <div>
+                    <h4 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', letterSpacing: '0.04em' }}>
+                      1. Promotion Parameters
                     </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div className="form-group">
-                        <label>Promotion Name</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Promotion Name</label>
                         <input className="form-input" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. VIP Summer Winback Offer" required/>
                       </div>
-                      <div className="form-group">
-                        <label>Promotion Code</label>
-                        <input className="form-input" value={promoCode} onChange={e=>setPromoCode(e.target.value)} placeholder="e.g. VIPWIN500" required/>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Promotion Code</label>
+                        <input className="form-input" value={promoCode} onChange={e=>setPromoCode(e.target.value)} placeholder="e.g. VIPWIN500" style={{ fontFamily: 'var(--mono)', textTransform: 'uppercase' }} required/>
                       </div>
-                      <div className="form-group">
-                        <label>Description</label>
-                        <textarea className="form-input" value={description} onChange={e=>setDescription(e.target.value)} placeholder="Explain the customer value and terms..." style={{ height: '50px' }}/>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Description</label>
+                        <textarea className="form-textarea" value={description} onChange={e=>setDescription(e.target.value)} placeholder="Explain the customer incentive and details..." style={{ minHeight: '80px' }}/>
                       </div>
-                      <div className="grid-2" style={{ gap: 10 }}>
-                        <div className="form-group">
-                          <label>Promotion Type</label>
+                      <div className="grid-2" style={{ gap: '14px' }}>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label">Incentive Type</label>
                           <select className="form-select" value={discountType} onChange={e=>setDiscountType(e.target.value)}>
-                            <option value="Percentage">Percentage</option>
-                            <option value="Fixed Amount">Fixed Amount</option>
+                            <option value="Percentage">Percentage Discount</option>
+                            <option value="Fixed Amount">Fixed Amount Discount</option>
                             <option value="Buy X Get Y">Buy X Get Y</option>
                             <option value="Free Shipping">Free Shipping</option>
                           </select>
                         </div>
-                        <div className="form-group">
-                          <label>Discount Value</label>
-                          <input className="form-input" type="number" value={discountValue} onChange={e=>setDiscountValue(Number(e.target.value))} required/>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label">Discount Value</label>
+                          <input className="form-input" type="number" value={discountValue} onChange={e=>setDiscountValue(Number(e.target.value))} min={0} required/>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* SECTION 2: ELIGIBILITY RULES */}
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '10px' }}>
-                      2. Eligibility Rules
+                  <div>
+                    <h4 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', letterSpacing: '0.04em' }}>
+                      2. Targeting & Eligibility Rules
                     </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <MultiSelect 
                         label="Eligible Categories" 
                         placeholder="ALL (Default)" 
@@ -3603,14 +3823,14 @@ export default function App() {
                   </div>
 
                   {/* SECTION 3: VALIDITY */}
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '10px' }}>
-                      3. Validity
+                  <div>
+                    <h4 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', letterSpacing: '0.04em' }}>
+                      3. Duration & Validity Window
                     </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div className="grid-2" style={{ gap: 10 }}>
-                        <div className="form-group">
-                          <label>Start Date & Time</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div className="grid-2" style={{ gap: '14px' }}>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label">Start Date & Time</label>
                           <input 
                             type="datetime-local" 
                             className="form-input" 
@@ -3618,8 +3838,8 @@ export default function App() {
                             onChange={e=>setStartDate(e.target.value)}
                           />
                         </div>
-                        <div className="form-group">
-                          <label>End Date & Time</label>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label">End Date & Time</label>
                           <input 
                             type="datetime-local" 
                             className="form-input" 
@@ -3629,38 +3849,35 @@ export default function App() {
                         </div>
                       </div>
                       
-                      {/* Live validity summary */}
-                      <div style={{ fontSize: '11px', color: 'var(--color-success)', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', padding: '6px 10px', borderRadius: '4px', fontWeight: 500 }}>
+                      <div style={{ fontSize: '12.5px', color: 'var(--color-success)', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', padding: '10px 14px', borderRadius: '4px', fontWeight: 500 }}>
                         {getLiveValiditySummary()}
                       </div>
                     </div>
                   </div>
 
                   {/* SECTION 4: STATUS */}
-                  <div style={{ paddingBottom: '10px' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '10px' }}>
-                      4. Status
+                  <div>
+                    <h4 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', letterSpacing: '0.04em' }}>
+                      4. Availability Status
                     </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
-                        <div>
-                          <strong style={{ display: 'block', fontSize: '12.5px', color: 'var(--text-primary)' }}>Active Status Toggle</strong>
-                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Enable or disable this promotion across the system</span>
-                        </div>
-                        <input 
-                          type="checkbox" 
-                          checked={active} 
-                          onChange={e=>setActive(e.target.checked)}
-                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                        />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                      <div>
+                        <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-primary)' }}>Active Status Toggle</strong>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Immediately enable or disable this coupon code across campaign flows</span>
                       </div>
+                      <input 
+                        type="checkbox" 
+                        checked={active} 
+                        onChange={e=>setActive(e.target.checked)}
+                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                      />
                     </div>
                   </div>
 
                   {/* SUBMIT BUTTONS */}
-                  <div style={{ display:'flex', justifyContent:'flex-end', gap:8, borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginTop: '10px' }}>
+                  <div style={{ display:'flex', justifyContent:'flex-end', gap:10, borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '8px' }}>
                     <button className="btn btn-secondary" type="button" onClick={()=>setPromoDrawerOpen(false)}>Cancel</button>
-                    <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Promotion Code'}</button>
+                    <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Promotion Plan'}</button>
                   </div>
                 </form>
               </div>
@@ -3763,7 +3980,7 @@ export default function App() {
 
         {/* Dense Shoppers Grid Table */}
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}><RefreshCw className="spin" /> Loading shopper list...</div>
+          <SkeletonLoader type="table" rows={6} />
         ) : (
           <div>
             <div className="table-container">
@@ -3866,7 +4083,7 @@ export default function App() {
                     {/* Header Banner - Section 9 (Recommended Next Step) and Section 8 (Attribution) */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '12px' }}>
                       {/* Section 9: Recommended Next Step */}
-                      <div className="card" style={{ borderLeft: '4px solid var(--color-success)', padding: '12px', margin: 0, backgroundColor: 'var(--color-success-bg)', boxShadow: 'none' }}>
+                      <div className="card" style={{ border: '1px solid var(--color-success-border)', padding: '12px', margin: 0, backgroundColor: 'var(--color-success-bg)', boxShadow: 'none' }}>
                         <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.04em' }}>
                           Recommended Next Step
                         </div>
@@ -3882,7 +4099,7 @@ export default function App() {
                       </div>
 
                       {/* Section 8: Revenue Attribution Summary */}
-                      <div className="card" style={{ borderLeft: '4px solid var(--color-accent)', padding: '12px', margin: 0, backgroundColor: '#ffffff', boxShadow: 'none' }}>
+                      <div className="card" style={{ padding: '12px', margin: 0, backgroundColor: '#ffffff', boxShadow: 'none' }}>
                         <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.04em' }}>
                           Revenue Attribution
                         </div>
@@ -4165,165 +4382,208 @@ export default function App() {
     };
 
     return (
-      <div className="split-pane fade-in" style={{ gridTemplateColumns: '70% 30%', gap: '16px' }}>
-        {/* Left Side Main Workspace */}
-        <div style={{ flex: '0 0 70%', overflowY: 'auto', paddingRight: '12px' }}>
-          <div className="card">
-            <div className="card-title">Reports Query Console</div>
-            <form onSubmit={(e) => handleQuerySubmit(e)}>
-              <div className="form-group" style={{ display: 'flex', gap: '8px', margin: 0 }}>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Ask in plain language (e.g. geographical distribution of customers, sales by category)..." 
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  style={{ height: '34px', fontSize: '13px' }}
-                  required
-                />
-                <button className="btn btn-accent" type="submit" disabled={loading} style={{ height: '34px' }}>
-                  {loading ? 'Executing...' : 'Ask'}
-                </button>
-              </div>
-            </form>
-            
-            {/* Suggested quick links */}
-            <div style={{ marginTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Suggestions:</span>
-              <button 
-                className="btn btn-secondary" 
-                style={{ padding: '3px 8px', fontSize: '11.5px', borderRadius: '12px' }}
-                onClick={(e) => { setQuestion("List geographical distribution of customers"); handleQuerySubmit(e, "List geographical distribution of customers"); }}
-              >
-                Geographical Distribution
-              </button>
-              <button 
-                className="btn btn-secondary" 
-                style={{ padding: '3px 8px', fontSize: '11.5px', borderRadius: '12px' }}
-                onClick={(e) => { setQuestion("Sales, orders, and revenue split by product categories"); handleQuerySubmit(e, "Sales, orders, and revenue split by product categories"); }}
-              >
-                Category Revenues
-              </button>
-              <button 
-                className="btn btn-secondary" 
-                style={{ padding: '3px 8px', fontSize: '11.5px', borderRadius: '12px' }}
-                onClick={(e) => { setQuestion("Identify customers at risk of churn"); handleQuerySubmit(e, "Identify customers at risk of churn"); }}
-              >
-                Retention Risks
-              </button>
-            </div>
-          </div>
-
-          {error && <ErrorMessage message={error} />}
-
-          {response && (
-            <div className="card fade-in">
-              <div className="flex-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '12px' }}>
-                <span className="badge badge-neutral" style={{ textTransform: 'capitalize', fontSize: '8.5px' }}>Topic Classified: {response.intent.replace('_', ' ')}</span>
-                <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Confidence: {Math.round(response.confidence_score * 100)}%</span>
-              </div>
-              
-              {/* Narrative explanation */}
-              <div style={{ marginBottom: '14px' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', textTransform: 'uppercase' }}>Executive Summary</h3>
-                <p style={{ fontSize: '13px', lineHeight: '1.45', color: 'var(--text-secondary)' }}>{response.response}</p>
-              </div>
-
-              {/* Data visualizations (inline SVGs) */}
-              {response.data_points && response.data_points.length > 0 && (
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginBottom: '14px' }}>
-                  <RenderDataChart chartType={response.chart_suggestion} data={response.data_points} />
-                </div>
-              )}
-
-              {/* Tabular results representation */}
-              {response.data_points && response.data_points.length > 0 ? (
-                <div className="table-container" style={{ margin: 0 }}>
-                  <table className="enterprise-table">
-                    <thead>
-                      <tr>
-                        {Object.keys(response.data_points[0]).map(key => (
-                          <th key={key}>{key.replace('_', ' ')}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {response.data_points.map((row, idx) => (
-                        <tr key={idx}>
-                          {Object.values(row).map((val: any, colIdx) => (
-                            <td key={colIdx} className={typeof val === 'number' ? 'mono-align' : ''} style={{ fontWeight: typeof val === 'number' ? 'bold' : 'normal' }}>
-                              {typeof val === 'number' && val > 1000 ? val.toLocaleString('en-IN') : String(val)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>No rows returned from query execution.</div>
-              )}
-
-              {/* SQL Collapsable audit details */}
-              {response.context_json && response.context_json.sql_query && (
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '16px' }}>
-                  <button 
-                    className="btn btn-secondary" 
-                    style={{ padding: '4px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    onClick={() => setIsSqlCollapsed(!isSqlCollapsed)}
-                  >
-                    <span>{isSqlCollapsed ? 'Show SQL Query Details' : 'Hide SQL Query Details'}</span>
-                    {isSqlCollapsed ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
-                  </button>
-                  
-                  {!isSqlCollapsed && (
-                    <div className="fade-in">
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '10px', fontWeight: 600 }}>Executed Query Statement</div>
-                      <div className="sql-audit-block">
-                        {response.context_json.sql_query}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+      <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Workspace Subheader — main title is in topbar */}
+        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px' }}>
+            Run real-time reports queries, review natural language intent classification logs, and analyze revenue projections.
+          </p>
         </div>
 
-        {/* Right queries history log */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title">Query Audit History</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {history.length > 0 ? (
-                history.map(item => (
-                  <div 
-                    key={item.query_id}
-                    onClick={(e) => { setQuestion(item.question); handleQuerySubmit(e, item.question); }}
-                    style={{
-                      padding: '8px 10px',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      transition: 'background-color 0.1s ease'
-                    }}
-                    className="nav-item-hover"
-                  >
-                    <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.question}
-                    </div>
-                    <div className="flex-between" style={{ marginTop: '4px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                      <span>Intent: {item.intent}</span>
-                      <span>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        {/* Executive KPI Metrics Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div className="workspace-panel" style={{ padding: '20px 24px', margin: 0 }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Recovered Churn Revenue</span>
+            <div className="kpi-number" style={{ color: 'var(--color-success)', marginTop: '8px' }}>₹3,48,200</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-success)', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>↑ 12.4%</span>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>vs last month</span>
+            </div>
+          </div>
+          <div className="workspace-panel" style={{ padding: '20px 24px', margin: 0 }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Campaign Outreach ROI</span>
+            <div className="kpi-number" style={{ color: 'var(--color-accent)', marginTop: '8px' }}>14.2x</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-accent)', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>Average Return</span>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>across all active channels</span>
+            </div>
+          </div>
+          <div className="workspace-panel" style={{ padding: '20px 24px', margin: 0 }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Shopper Database Value</span>
+            <div className="kpi-number" style={{ color: 'var(--text-primary)', marginTop: '8px' }}>25,420</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-success)', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>↑ 4.2%</span>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>YoY growth rate</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Workspace split */}
+        <div className="split-pane" style={{ height: 'calc(100vh - var(--header-height) - 340px)' }}>
+          {/* Left panel - console */}
+          <div className="split-left" style={{ flex: '0 0 70%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="workspace-panel" style={{ padding: '24px', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '14px' }}>Reports Query Console</h3>
+              <form onSubmit={(e) => handleQuerySubmit(e)}>
+                <div className="form-group" style={{ display: 'flex', gap: '10px', margin: 0 }}>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    placeholder="Ask in plain language (e.g. geographical distribution of customers, sales by category)..." 
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    style={{ height: '42px', fontSize: '14px' }}
+                    required
+                  />
+                  <button className="btn btn-primary" type="submit" disabled={loading} style={{ height: '42px', padding: '0 24px' }}>
+                    {loading ? 'Executing...' : 'Ask Console'}
+                  </button>
+                </div>
+              </form>
+              
+              {/* Suggested quick links */}
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Suggested Queries:</span>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ padding: '5px 12px', fontSize: '12.5px', borderRadius: '16px' }}
+                  onClick={(e) => { setQuestion("List geographical distribution of customers"); handleQuerySubmit(e, "List geographical distribution of customers"); }}
+                >
+                  Geographical Distribution
+                </button>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ padding: '5px 12px', fontSize: '12.5px', borderRadius: '16px' }}
+                  onClick={(e) => { setQuestion("Sales, orders, and revenue split by product categories"); handleQuerySubmit(e, "Sales, orders, and revenue split by product categories"); }}
+                >
+                  Category Revenues
+                </button>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ padding: '5px 12px', fontSize: '12.5px', borderRadius: '16px' }}
+                  onClick={(e) => { setQuestion("Identify customers at risk of churn"); handleQuerySubmit(e, "Identify customers at risk of churn"); }}
+                >
+                  Retention Risks
+                </button>
+              </div>
+            </div>
+
+            {loading && <SkeletonLoader type="table" />}
+            {error && <ErrorMessage message={error} />}
+
+            {response && !loading && (
+              <div className="workspace-panel" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="flex-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                  <span className="badge badge-primary">Topic Classified: {response.intent.replace('_', ' ')}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Model Confidence: {Math.round(response.confidence_score * 100)}%</span>
+                </div>
+                
+                {/* Narrative explanation */}
+                <div>
+                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>Executive Summary</h4>
+                  <p style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>{response.response}</p>
+                </div>
+
+                {/* Data visualizations (inline SVGs) */}
+                {response.data_points && response.data_points.length > 0 && (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', paddingBottom: '8px' }}>
+                    <RenderDataChart chartType={response.chart_suggestion} data={response.data_points} />
+                  </div>
+                )}
+
+                {/* Tabular results representation */}
+                {response.data_points && response.data_points.length > 0 ? (
+                  <div>
+                    <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Query Dataset</h4>
+                    <div className="table-container" style={{ margin: 0 }}>
+                      <table className="enterprise-table">
+                        <thead>
+                          <tr>
+                            {Object.keys(response.data_points[0]).map(key => (
+                              <th key={key}>{key.replace('_', ' ')}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {response.data_points.map((row, idx) => (
+                            <tr key={idx}>
+                              {Object.values(row).map((val: any, colIdx) => (
+                                <td key={colIdx} className={typeof val === 'number' ? 'mono-align' : ''} style={{ fontWeight: typeof val === 'number' ? '600' : 'normal' }}>
+                                  {typeof val === 'number' && val > 1000 ? val.toLocaleString('en-IN') : String(val)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px', fontSize: '11.5px' }}>
-                  No recent audit queries.
-                </div>
-              )}
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>No rows returned from query execution.</div>
+                )}
+
+                {/* SQL Collapsable audit details */}
+                {response.context_json && response.context_json.sql_query && (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      style={{ padding: '6px 12px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      onClick={() => setIsSqlCollapsed(!isSqlCollapsed)}
+                    >
+                      <span>{isSqlCollapsed ? 'Audit Executed SQL Statement' : 'Hide SQL Audit'}</span>
+                      {isSqlCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                    </button>
+                    
+                    {!isSqlCollapsed && (
+                      <div className="fade-in" style={{ marginTop: '12px' }}>
+                        <div className="sql-audit-block">
+                          {response.context_json.sql_query}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right panel - history */}
+          <div className="split-right" style={{ paddingLeft: '16px' }}>
+            <div className="workspace-panel" style={{ padding: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                Query History Audit
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {history.length > 0 ? (
+                  history.map(item => (
+                    <div 
+                      key={item.query_id}
+                      onClick={(e) => { setQuestion(item.question); handleQuerySubmit(e, item.question); }}
+                      style={{
+                        padding: '10px 12px',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        transition: 'all 0.15s ease',
+                        backgroundColor: '#F9FAFB'
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                        {item.question}
+                      </div>
+                      <div className="flex-between" style={{ marginTop: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <span>Classification: {item.intent}</span>
+                        <span>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px', fontSize: '12px' }}>
+                    No recent audit queries.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -4450,14 +4710,18 @@ export default function App() {
     );
   }
 
+  if (showLanding) {
+    return <LandingPage onLaunch={() => setShowLanding(false)} />;
+  }
+
   return (
     <div className="app-container">
       {/* Left Navigation Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="logo-text">Xenia</span>
-            <span className="logo-sub">Operations OS</span>
+        <div className="sidebar-header" onClick={() => setShowLanding(true)} style={{ cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="sidebar-logo-icon">X</div>
+            <span className="logo-text">Xenia CRM</span>
           </div>
         </div>
         
@@ -4514,6 +4778,41 @@ export default function App() {
             <Tag size={16} />
             <span>Promotions</span>
           </div>
+
+          {/* Voice Campaigns — Premium Channel */}
+          <div style={{ margin: '8px 6px 2px', padding: '4px 6px', fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Premium Channels
+          </div>
+          <div 
+            onClick={() => setActiveTab('voice_campaigns')} 
+            className={`nav-item ${activeTab === 'voice_campaigns' ? 'active' : ''}`}
+            style={{ position: 'relative' }}
+          >
+            <Phone size={16} />
+            <span>Voice Campaigns</span>
+            <span style={{
+              marginLeft: 'auto',
+              fontSize: '8px',
+              fontWeight: 700,
+              backgroundColor: 'var(--color-accent-light)',
+              color: 'var(--color-accent)',
+              border: '1px solid #BFDBFE',
+              padding: '1px 5px',
+              borderRadius: '3px',
+              letterSpacing: '0.04em'
+            }}>VIP</span>
+          </div>
+
+          {/* Settings — always at the bottom */}
+          <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+            <div 
+              onClick={() => setActiveTab('settings')} 
+              className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+            >
+              <Settings size={16} />
+              <span>Settings</span>
+            </div>
+          </div>
         </nav>
       </aside>
 
@@ -4527,14 +4826,12 @@ export default function App() {
               {activeTab === 'home' && 'Operations Dashboard'}
               {activeTab === 'opportunities' && 'Suggested Actions Pipeline'}
               {activeTab === 'campaigns' && 'Campaign Workspace'}
-              {activeTab === 'shoppers' && 'Shopper Intelligence'}
+              {activeTab === 'shoppers' && 'Shopper Directory'}
               {activeTab === 'analytics' && 'Operational Reports'}
               {activeTab === 'promotions' && 'Promotions Manager'}
+              {activeTab === 'voice_campaigns' && 'Voice Campaigns'}
+              {activeTab === 'settings' && 'System Settings'}
             </h1>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 500 }}>System Health:</span>
-            <span className="badge badge-success">Operational</span>
           </div>
         </header>
 
@@ -4545,6 +4842,8 @@ export default function App() {
           {activeTab === 'shoppers' && <ShoppersView />}
           {activeTab === 'analytics' && <AnalyticsView />}
           {activeTab === 'promotions' && <PromotionsView />}
+          {activeTab === 'voice_campaigns' && <VoiceCampaignsView />}
+          {activeTab === 'settings' && <SettingsView />}
         </div>
       </main>
 
@@ -4635,32 +4934,34 @@ export default function App() {
                   <h4 style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
                     Best Performing Campaigns
                   </h4>
-                  <table className="enterprise-table" style={{ fontSize: '11px' }}>
-                    <thead>
-                      <tr>
-                        <th>Campaign Name</th>
-                        <th className="mono-align">Revenue</th>
-                        <th className="mono-align">ROI</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>VIP Win-Back Blast</td>
-                        <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.6).toLocaleString('en-IN')}</td>
-                        <td className="mono-align">{(selectedPromotionForIntelligence.roi_generated || 14.2).toFixed(1)}x</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>Dormant Shopper Outreach</td>
-                        <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.3).toLocaleString('en-IN')}</td>
-                        <td className="mono-align">{(selectedPromotionForIntelligence.roi_generated ? selectedPromotionForIntelligence.roi_generated * 0.85 : 12.0).toFixed(1)}x</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>Seasonal Special Promo</td>
-                        <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.1).toLocaleString('en-IN')}</td>
-                        <td className="mono-align">{(selectedPromotionForIntelligence.roi_generated ? selectedPromotionForIntelligence.roi_generated * 0.77 : 11.0).toFixed(1)}x</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div className="table-container" style={{ margin: 0 }}>
+                    <table className="enterprise-table" style={{ fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th>Campaign Name</th>
+                          <th className="mono-align">Revenue</th>
+                          <th className="mono-align">ROI</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>VIP Win-Back Blast</td>
+                          <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.6).toLocaleString('en-IN')}</td>
+                          <td className="mono-align">{(selectedPromotionForIntelligence.roi_generated || 14.2).toFixed(1)}x</td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>Dormant Shopper Outreach</td>
+                          <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.3).toLocaleString('en-IN')}</td>
+                          <td className="mono-align">{(selectedPromotionForIntelligence.roi_generated ? selectedPromotionForIntelligence.roi_generated * 0.85 : 12.0).toFixed(1)}x</td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>Seasonal Special Promo</td>
+                          <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.1).toLocaleString('en-IN')}</td>
+                          <td className="mono-align">{(selectedPromotionForIntelligence.roi_generated ? selectedPromotionForIntelligence.roi_generated * 0.77 : 11.0).toFixed(1)}x</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {/* Best Performing Cities */}
@@ -4668,32 +4969,34 @@ export default function App() {
                   <h4 style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
                     Best Performing Cities
                   </h4>
-                  <table className="enterprise-table" style={{ fontSize: '11px' }}>
-                    <thead>
-                      <tr>
-                        <th>City</th>
-                        <th className="mono-align">Revenue</th>
-                        <th className="mono-align">Usage</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>Chennai</td>
-                        <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.45).toLocaleString('en-IN')}</td>
-                        <td className="mono-align">{Math.round((selectedPromotionForIntelligence.times_used || 142) * 0.45)}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>Bengaluru</td>
-                        <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.35).toLocaleString('en-IN')}</td>
-                        <td className="mono-align">{Math.round((selectedPromotionForIntelligence.times_used || 142) * 0.35)}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>Mumbai</td>
-                        <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.20).toLocaleString('en-IN')}</td>
-                        <td className="mono-align">{Math.round((selectedPromotionForIntelligence.times_used || 142) * 0.20)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div className="table-container" style={{ margin: 0 }}>
+                    <table className="enterprise-table" style={{ fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th>City</th>
+                          <th className="mono-align">Revenue</th>
+                          <th className="mono-align">Usage</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>Chennai</td>
+                          <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.45).toLocaleString('en-IN')}</td>
+                          <td className="mono-align">{Math.round((selectedPromotionForIntelligence.times_used || 142) * 0.45)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>Bengaluru</td>
+                          <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.35).toLocaleString('en-IN')}</td>
+                          <td className="mono-align">{Math.round((selectedPromotionForIntelligence.times_used || 142) * 0.35)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>Mumbai</td>
+                          <td className="mono-align">₹{Math.round((selectedPromotionForIntelligence.revenue_generated || 205900) * 0.20).toLocaleString('en-IN')}</td>
+                          <td className="mono-align">{Math.round((selectedPromotionForIntelligence.times_used || 142) * 0.20)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -4702,4 +5005,1573 @@ export default function App() {
       )}
     </div>
   );
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 7. VOICE CAMPAIGNS VIEW — Premium Outreach (Champions & Lost Champions only)
+  // ────────────────────────────────────────────────────────────────────────────
+  function VoiceCampaignsView() {
+    type VoiceStep = 'audience' | 'strategy' | 'script' | 'preview' | 'cost' | 'approval' | 'tracking';
+
+    const [step, setStep] = useState<VoiceStep>('audience');
+    const [audienceData, setAudienceData] = useState<VoiceEligibleAudienceResponse | null>(null);
+    const [audienceLoading, setAudienceLoading] = useState(true);
+    const [audienceError, setAudienceError] = useState<string | null>(null);
+
+    // Strategy state
+    const [campaignGoal, setCampaignGoal] = useState('Re-engage our most valued customers with an exclusive loyalty offer');
+    const [voiceTone, setVoiceTone] = useState('Professional');
+    const [language, setLanguage] = useState('English');
+    const [voiceModel, setVoiceModel] = useState('EXAVITQu4vr4xnSDxMaL');
+    const [promoCode, setPromoCode] = useState('VIP25');
+    const [discountValue, setDiscountValue] = useState(25);
+    const [voicesList, setVoicesList] = useState<any[]>([]);
+    const [voicesLoading, setVoicesLoading] = useState(true);
+    const [voicesError, setVoicesError] = useState<string | null>(null);
+
+    // Script state
+    const [scriptData, setScriptData] = useState<VoiceScriptResponse | null>(null);
+    const [scriptLoading, setScriptLoading] = useState(false);
+    const [scriptError, setScriptError] = useState<string | null>(null);
+
+    // Audio playback state
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [audioLoading, setAudioLoading] = useState(false);
+    const [audioError, setAudioError] = useState<string | null>(null);
+    const [generatedBy, setGeneratedBy] = useState<'elevenlabs' | 'mock' | null>(null);
+    const audioObjRef = useRef<HTMLAudioElement | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [playProgress, setPlayProgress] = useState(0);
+    const playIntervalRef = useRef<number | null>(null);
+
+    // Simulation state
+    const [simData, setSimData] = useState<VoiceSimulationResponse | null>(null);
+    const [simLoading] = useState(false);
+    const [isLaunching, setIsLaunching] = useState(false);
+    const [launchProgress, setLaunchProgress] = useState(0);
+    const [launchLogs, setLaunchLogs] = useState<string[]>([]);
+
+    // Shopper drawer state
+    const [selectedCallEvent, setSelectedCallEvent] = useState<VoiceCallEvent | null>(null);
+
+    // Load audience and voices on mount
+    useEffect(() => {
+      api.getVoiceEligibleAudience()
+        .then(d => { setAudienceData(d); setAudienceLoading(false); })
+        .catch(e => { setAudienceError(e.message); setAudienceLoading(false); });
+
+      setVoicesLoading(true);
+      api.getVoiceModels()
+        .then(d => {
+          setVoicesList(d);
+          if (d.length > 0) {
+            const hasDefault = d.find(v => v.voice_id === 'EXAVITQu4vr4xnSDxMaL');
+            setVoiceModel(hasDefault ? 'EXAVITQu4vr4xnSDxMaL' : d[0].voice_id);
+          }
+          setVoicesLoading(false);
+        })
+        .catch(e => {
+          setVoicesError(e.message);
+          setVoicesLoading(false);
+        });
+    }, []);
+
+    // Fetch synthesized audio when entering the preview step
+    useEffect(() => {
+      if (step === 'preview' && scriptData) {
+        const fetchAudio = async () => {
+          setAudioLoading(true);
+          setAudioError(null);
+          setAudioUrl(null);
+          setGeneratedBy(null);
+          setPlayProgress(0);
+          setIsPlaying(false);
+          if (audioObjRef.current) {
+            audioObjRef.current.pause();
+            audioObjRef.current = null;
+          }
+          try {
+            const res = await api.generateAudio({
+              text: scriptData.script.full_script,
+              voice_model: voiceModel,
+            });
+            if (res.audio_base64) {
+              const dataUrl = `data:audio/mpeg;base64,${res.audio_base64}`;
+              setAudioUrl(dataUrl);
+              setGeneratedBy(res.generated_by as 'elevenlabs' | 'mock');
+              const audio = new Audio(dataUrl);
+              audioObjRef.current = audio;
+              
+              audio.addEventListener('play', () => setIsPlaying(true));
+              audio.addEventListener('pause', () => setIsPlaying(false));
+              audio.addEventListener('ended', () => {
+                setIsPlaying(false);
+                setPlayProgress(100);
+              });
+              audio.addEventListener('timeupdate', () => {
+                if (audio.duration) {
+                  setPlayProgress((audio.currentTime / audio.duration) * 100);
+                }
+              });
+            } else {
+              setGeneratedBy('mock');
+              setAudioError("No audio content returned. ElevenLabs API key may be invalid or not set.");
+            }
+          } catch (e: any) {
+            setGeneratedBy('mock');
+            setAudioError(e.message || "Failed to generate TTS audio");
+          } finally {
+            setAudioLoading(false);
+          }
+        };
+        fetchAudio();
+      }
+      
+      return () => {
+        if (audioObjRef.current) {
+          audioObjRef.current.pause();
+          audioObjRef.current = null;
+        }
+        if (playIntervalRef.current) {
+          clearInterval(playIntervalRef.current);
+        }
+      };
+    }, [step, scriptData, voiceModel]);
+
+    const handleGenerateScript = async () => {
+      if (!audienceData) return;
+      setScriptLoading(true);
+      setScriptError(null);
+      try {
+        const topCat = audienceData.shoppers[0]?.top_category || 'general retail';
+        const result = await api.generateVoiceScript({
+          campaign_goal: campaignGoal,
+          audience_segment: Object.keys(audienceData.summary.segment_distribution)[0] || 'Champion',
+          audience_size: audienceData.summary.total_identified,
+          avg_ltv: audienceData.summary.avg_ltv,
+          avg_inactivity_days: audienceData.summary.avg_inactivity_days,
+          voice_tone: voiceTone,
+          language,
+          voice_model: voiceModel,
+          promo_code: promoCode,
+          discount_value: discountValue,
+          discount_type: 'Percentage',
+          brand_name: 'Xenia',
+          top_category: topCat,
+        });
+        setScriptData(result);
+        setStep('script');
+      } catch (e: any) {
+        setScriptError(e.message);
+      } finally {
+        setScriptLoading(false);
+      }
+    };
+
+    const runSimulatedAudio = () => {
+      if (isPlaying) {
+        if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+        setIsPlaying(false);
+        return;
+      }
+      setIsPlaying(true);
+      setPlayProgress(0);
+      const totalMs = scriptData ? scriptData.estimated_duration_sec * 1000 : 30000;
+      const startTime = Date.now();
+      playIntervalRef.current = window.setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min(100, (elapsed / totalMs) * 100);
+        setPlayProgress(pct);
+        if (pct >= 100) {
+          if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+          setIsPlaying(false);
+        }
+      }, 100);
+    };
+
+    const handlePlayPreview = () => {
+      if (!scriptData) return;
+      if (audioUrl && audioObjRef.current) {
+        if (isPlaying) {
+          audioObjRef.current.pause();
+        } else {
+          audioObjRef.current.play().catch(e => {
+            console.error("Audio play failed, falling back to simulated playback:", e);
+            runSimulatedAudio();
+          });
+        }
+      } else {
+        runSimulatedAudio();
+      }
+    };
+
+    const handleSimulateCalls = async () => {
+      if (!audienceData) return;
+      setIsLaunching(true);
+      setLaunchProgress(0);
+      setLaunchLogs(["Initializing Xenia Voice Agent outbound dialer..."]);
+
+      const duration = 5000;
+      const startTime = Date.now();
+      
+      const interval = window.setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min(100, (elapsed / duration) * 100);
+        setLaunchProgress(pct);
+
+        if (pct >= 20 && pct < 45) {
+          setLaunchLogs(prev => prev.length === 1 ? [...prev, "Connecting to telecom SIP trunks..."] : prev);
+        } else if (pct >= 45 && pct < 70) {
+          setLaunchLogs(prev => prev.length === 2 ? [...prev, `Synthesizing dynamic custom scripts for ${audienceData.summary.total_identified} VIP shoppers...`] : prev);
+        } else if (pct >= 70 && pct < 90) {
+          setLaunchLogs(prev => prev.length === 3 ? [...prev, "Placing outbound calls to agent queue..."] : prev);
+        } else if (pct >= 90 && pct < 100) {
+          setLaunchLogs(prev => prev.length === 4 ? [...prev, "Simulating calls in real-time..."] : prev);
+        }
+
+        if (elapsed >= duration) {
+          window.clearInterval(interval);
+          api.simulateVoiceCalls({
+            shoppers: audienceData.shoppers,
+            promo_code: promoCode,
+          })
+          .then(result => {
+            setSimData(result);
+            setStep('tracking');
+            setIsLaunching(false);
+          })
+          .catch(e => {
+            console.error(e);
+            setIsLaunching(false);
+          });
+        }
+      }, 100);
+    };
+
+
+
+    const stepLabels: { key: VoiceStep; label: string }[] = [
+      { key: 'audience',  label: '1. Audience' },
+      { key: 'strategy',  label: '2. Strategy' },
+      { key: 'script',    label: '3. Script' },
+      { key: 'preview',   label: '4. Preview' },
+      { key: 'cost',      label: '5. Cost' },
+      { key: 'approval',  label: '6. Approval' },
+      { key: 'tracking',  label: '7. Tracking' },
+    ];
+
+    const stepOrder: VoiceStep[] = ['audience','strategy','script','preview','cost','approval','tracking'];
+    const currentStepIdx = stepOrder.indexOf(step);
+
+    const purple = 'var(--color-accent)'; // Brand Theme Accent (Red)
+    const purpleLight = 'var(--color-accent-light)'; // Light Theme Accent
+    const purpleBorder = 'var(--color-accent-border, #fca5a5)'; // Accent Border
+
+    const renderTimelineIcon = (iconStr: string) => {
+      switch (iconStr) {
+        case '✅': return <CheckCircle2 size={12} color={purple} />;
+        case '🔊': return <Volume2 size={12} color={purple} />;
+        case '📋': return <FileText size={12} color={purple} />;
+        case '💌': return <Send size={12} color={purple} />;
+        case '🛍️': return <ShoppingBag size={12} color={purple} />;
+        case '💰': return <DollarSign size={12} color={purple} />;
+        case '❌': return <XCircle size={12} color={purple} />;
+        case '📵': return <PhoneOff size={12} color={purple} />;
+        default: return <Clock size={12} color={purple} />;
+      }
+    };
+
+    return (
+      <div className="fade-in">
+        {/* Premium Header Banner */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          border: '1px solid var(--border-color)',
+          borderRadius: '8px',
+          padding: '18px 24px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '44px', height: '44px',
+              backgroundColor: 'var(--color-accent-light)',
+              borderRadius: '6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Phone size={22} color="var(--color-accent)" />
+            </div>
+            <div>
+              <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                Voice Campaigns
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                Targeted voice campaigns for Champions and Lost Champions.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Step Progress */}
+        <div className="flow-steps" style={{ marginBottom: '20px', gap: '8px' }}>
+          {stepLabels.map((s, idx) => {
+            const isActive = s.key === step;
+            const isDone = stepOrder.indexOf(s.key) < currentStepIdx;
+            return (
+              <React.Fragment key={s.key}>
+                <div
+                  onClick={() => isDone && setStep(s.key)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '4px 8px', borderRadius: '4px',
+                    cursor: isDone ? 'pointer' : 'default',
+                    fontWeight: isActive ? 700 : 500,
+                    fontSize: '12.5px',
+                    color: isActive ? 'var(--color-accent)' : isDone ? 'var(--color-success)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--color-accent-light)' : 'transparent',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {isDone && <span style={{ fontSize: '10px', marginRight: '2px' }}>✓</span>}
+                  {s.label}
+                </div>
+                {idx < stepLabels.length - 1 && (
+                  <span className="flow-step-separator">➔</span>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* ── STEP 1: AUDIENCE SELECTION ─────────────────────────────────── */}
+        {step === 'audience' && (
+          <div className="fade-in">
+            {audienceLoading && (
+              <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+                <Phone size={32} color="var(--color-accent)" style={{ animation: 'pulse 1.5s infinite alternate', marginBottom: '12px' }} />
+                <div style={{ fontSize: '14px', fontWeight: 600 }}>Scanning for eligible VIP shoppers...</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>Filtering Champions & Lost Champions only</div>
+              </div>
+            )}
+            {audienceError && (
+              <div style={{ background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', borderRadius: '6px', padding: '16px', color: 'var(--color-danger)' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={14} /> {audienceError}</span>
+              </div>
+            )}
+            {audienceData && !audienceLoading && (
+              <>
+                {/* Large audience warning */}
+                {audienceData.summary.is_large_audience && (
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <AlertOctagon size={16} color="#c2410c" />
+                    <span style={{ fontSize: '12.5px', color: '#9a3412', fontWeight: 500 }}>{audienceData.summary.large_audience_warning}</span>
+                  </div>
+                )}
+
+                {/* Audience Intelligence Banner */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px'
+                }}>
+                  {[
+                    { label: 'Eligible VIP Shoppers', value: audienceData.summary.total_identified.toLocaleString('en-IN'), sub: 'Champions & Lost Champions', icon: <Users size={20} color={purple} />, color: purple },
+                    { label: 'Average Lifetime Value', value: `₹${audienceData.summary.avg_ltv.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, sub: 'Per shopper', icon: <Gem size={20} color="#059669" />, color: '#059669' },
+                    { label: 'Average Inactivity', value: `${Math.round(audienceData.summary.avg_inactivity_days)} days`, sub: 'Since last purchase', icon: <Calendar size={20} color="#d97706" />, color: '#d97706' },
+                    { label: 'Potential Recovery Value', value: `₹${(audienceData.summary.potential_recovery_value / 100000).toFixed(1)}L`, sub: 'Est. at 28% recovery rate', icon: <TrendingUp size={20} color="#2563eb" />, color: '#2563eb' },
+                  ].map(card => (
+                    <div key={card.label} style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '14px' }}>
+                      <div style={{ marginBottom: '6px' }}>{card.icon}</div>
+                      <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '4px' }}>{card.label}</div>
+                      <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{card.value}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{card.sub}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Segment distribution */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div className="card" style={{ margin: 0, padding: '14px' }}>
+                    <div className="card-title">Segment Breakdown</div>
+                    {Object.entries(audienceData.summary.segment_distribution).map(([seg, count]) => (
+                      <div key={seg} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: seg === 'Champion' ? '#059669' : '#7c3aed', display: 'inline-block' }} />
+                          <span style={{ fontSize: '12.5px', fontWeight: 600 }}>{seg}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{count} shoppers</span>
+                          <span style={{ fontSize: '11px', background: purpleLight, color: purple, padding: '2px 6px', borderRadius: '3px', fontWeight: 600 }}>
+                            {Math.round((count / audienceData.summary.total_identified) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="card" style={{ margin: 0, padding: '14px' }}>
+                    <div className="card-title">Top Cities</div>
+                    {Object.entries(audienceData.summary.city_distribution).slice(0, 5).map(([city, count]) => (
+                      <div key={city} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-color)' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 500 }}>{city}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ width: '60px', height: '4px', background: '#f0f0f0', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.round((count / audienceData.summary.total_identified) * 100)}%`, height: '100%', background: purple, borderRadius: '2px' }} />
+                          </div>
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Shopper Preview Table */}
+                <div className="card" style={{ margin: 0 }}>
+                  <div className="card-title" style={{ marginBottom: '12px' }}>
+                    VIP Shopper Preview — Voice Campaign Targets
+                    <span style={{ fontSize: '10px', background: purpleLight, color: purple, padding: '2px 8px', borderRadius: '3px', fontWeight: 600 }}>
+                      {audienceData.shoppers.length} eligible
+                    </span>
+                  </div>
+                  <div className="table-container" style={{ margin: 0 }}>
+                    <table className="enterprise-table">
+                      <thead>
+                        <tr>
+                          <th>Shopper Name</th>
+                          <th>City</th>
+                          <th>Segment</th>
+                          <th className="mono-align">Lifetime Value</th>
+                          <th className="mono-align">Days Inactive</th>
+                          <th className="mono-align">Orders</th>
+                          <th>Why Selected</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {audienceData.shoppers.slice(0, 50).map((s, idx) => (
+                          <tr key={idx}>
+                            <td style={{ fontWeight: 600 }}>{s.name}</td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{s.city}</td>
+                            <td>
+                              <span style={{
+                                fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '3px',
+                                background: s.segment_name === 'Champion' ? '#f0fdf4' : purpleLight,
+                                color: s.segment_name === 'Champion' ? '#059669' : purple,
+                                border: `1px solid ${s.segment_name === 'Champion' ? '#bbf7d0' : purpleBorder}`
+                              }}>
+                                {s.segment_name === 'Champion' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Trophy size={11} /> Champion</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Zap size={11} /> Lost Champion</span>}
+                              </span>
+                            </td>
+                            <td className="mono-align" style={{ fontWeight: 600 }}>₹{s.lifetime_value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                            <td className="mono-align" style={{ color: s.last_purchase_days > 180 ? '#dc2626' : s.last_purchase_days > 90 ? '#d97706' : 'var(--text-primary)' }}>
+                              {s.last_purchase_days}d
+                            </td>
+                            <td className="mono-align">{s.total_orders}</td>
+                            <td style={{ fontSize: '11.5px', color: 'var(--text-secondary)', maxWidth: '200px' }}>{s.reason_selected}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {audienceData.shoppers.length > 50 && (
+                    <div style={{ padding: '10px 16px', fontSize: '11.5px', color: 'var(--text-muted)', textAlign: 'center', borderTop: '1px solid var(--border-color)' }}>
+                      Showing 50 of {audienceData.shoppers.length} eligible shoppers
+                    </div>
+                  )}
+                </div>
+
+                {audienceData.shoppers.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <Search size={32} color="var(--text-muted)" style={{ marginBottom: '12px' }} />
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '8px' }}>No Champions or Lost Champions found</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px' }}>Run the nightly customer segment updates first.</div>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setStep('strategy')}
+                      style={{ padding: '10px 24px', fontSize: '13.5px' }}
+                    >
+                      <Mic size={15} /> Continue to Voice Strategy →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 2: VOICE STRATEGY ─────────────────────────────────────── */}
+        {step === 'strategy' && (
+          <div className="fade-in" style={{ maxWidth: '760px', margin: '0 auto' }}>
+            {/* Pre-launch cost warning */}
+            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <AlertOctagon size={18} color="#c2410c" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#9a3412', marginBottom: '4px' }}>Voice Campaigns Are a Premium Channel</div>
+                <div style={{ fontSize: '12px', color: '#78350f', lineHeight: '1.5' }}>
+                  Voice outreach is reserved exclusively for <strong>Champions</strong> and <strong>Lost Champions</strong>.
+                  Each call incurs voice synthesis and telecom costs. Ensure your ROI justification is clear before proceeding.
+                  Do not use Voice Campaigns for mass marketing — use WhatsApp or Email instead.
+                </div>
+              </div>
+            </div>
+
+            <div className="card" style={{ margin: '0 0 16px 0' }}>
+              <div className="card-title" style={{ marginBottom: '16px' }}>Campaign Strategy Configuration</div>
+
+              <div className="form-group">
+                <label className="form-label">Campaign Goal</label>
+                <textarea
+                  className="form-textarea"
+                  value={campaignGoal}
+                  onChange={e => setCampaignGoal(e.target.value)}
+                  rows={2}
+                  placeholder="e.g. Re-engage dormant VIP customers with exclusive loyalty rewards"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Voice Tone</label>
+                  <select className="form-select" value={voiceTone} onChange={e => setVoiceTone(e.target.value)}>
+                    {['Professional','Friendly','Luxury','Conversational','Urgent Win-back'].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Language</label>
+                  <select className="form-select" value={language} onChange={e => setLanguage(e.target.value)}>
+                    {['English','Tamil','Hindi','English + Tamil','English + Hindi'].map(l => (
+                      <option key={l} value={l}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Promo Code</label>
+                  <input className="form-input" value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())} placeholder="VIP25" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Discount (%)</label>
+                  <input className="form-input" type="number" value={discountValue} onChange={e => setDiscountValue(Number(e.target.value))} min={5} max={70} />
+                </div>
+              </div>
+            </div>
+
+            {/* Voice Model Selection */}
+            <div className="card" style={{ margin: '0 0 16px 0' }}>
+              <div className="card-title" style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mic size={18} color="var(--color-accent)" />
+                Voice Model Selection
+              </div>
+              {voicesLoading ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <RefreshCw size={20} style={{ animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
+                  <div>Fetching voice models from ElevenLabs...</div>
+                </div>
+              ) : voicesError ? (
+                <div style={{ background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', borderRadius: '6px', padding: '12px', color: 'var(--color-danger)', fontSize: '12.5px' }}>
+                  <AlertTriangle size={14} style={{ marginRight: '6px' }} /> Failed to load voices: {voicesError}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {voicesList.map(vm => (
+                    <div
+                      key={vm.voice_id}
+                      onClick={() => setVoiceModel(vm.voice_id)}
+                      style={{
+                        padding: '10px 14px',
+                        border: `1px solid ${voiceModel === vm.voice_id ? purple : 'var(--border-color)'}`,
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        background: voiceModel === vm.voice_id ? purpleLight : '#fff',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                        <Mic size={16} color={voiceModel === vm.voice_id ? purple : 'var(--text-muted)'} style={{ flexShrink: 0 }} />
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', width: '120px' }}>
+                          {vm.name}
+                        </div>
+                        <span style={{
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          padding: '1px 5px',
+                          borderRadius: '3px',
+                          backgroundColor: vm.gender === 'female' ? '#fdf2f8' : '#eff6ff',
+                          color: vm.gender === 'female' ? '#db2777' : '#2563eb',
+                          flexShrink: 0
+                        }}>
+                          {vm.gender}
+                        </span>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', marginLeft: '12px' }}>
+                          {vm.description}
+                        </div>
+                      </div>
+                      
+                      {voiceModel === vm.voice_id ? (
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: purple, display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                          <CheckCircle2 size={12} /> Selected
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>Click to select</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {scriptError && (
+              <div style={{ background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', borderRadius: '6px', padding: '12px', marginBottom: '12px', color: 'var(--color-danger)', fontSize: '12.5px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><AlertOctagon size={14} /> Script generation failed: {scriptError}</span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button className="btn btn-secondary" onClick={() => setStep('audience')}>← Back</button>
+              <button
+                className="btn btn-primary"
+                onClick={handleGenerateScript}
+                disabled={scriptLoading || !campaignGoal.trim()}
+                style={{ padding: '10px 28px', fontSize: '13.5px', opacity: scriptLoading ? 0.7 : 1 }}
+              >
+                {scriptLoading ? (
+                  <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Generating Script...</>
+                ) : (
+                  <><Mic size={14} /> Create Voice Campaign Script →</>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: AI SCRIPT ──────────────────────────────────────────── */}
+        {step === 'script' && scriptData && (
+          <div className="fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
+            {/* Script Meta Bar */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              {[
+                { label: 'Duration', value: `~${scriptData.estimated_duration_sec}s`, icon: <Clock size={14} color={purple} /> },
+                { label: 'Word Count', value: scriptData.word_count, icon: <FileText size={14} color={purple} /> },
+                { label: 'Voice', value: scriptData.voice_model_name, icon: <Mic size={14} color={purple} /> },
+                { label: 'Language', value: scriptData.language, icon: <Globe size={14} color={purple} /> },
+                { label: 'Cost / Call', value: `₹${scriptData.estimated_cost_per_call_inr.toFixed(2)}`, icon: <DollarSign size={14} color={purple} /> },
+              ].map(m => (
+                <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: purpleLight, border: `1px solid ${purpleBorder}`, borderRadius: '6px', padding: '6px 12px' }}>
+                  {m.icon}
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{m.label}:</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: purple }}>{m.value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Full Script Card */}
+            <div className="card" style={{ margin: '0 0 14px 0' }}>
+              <div className="card-title" style={{ marginBottom: '14px' }}>
+                Voice Campaign Advertisement Script
+                <button
+                  onClick={handleGenerateScript}
+                  style={{ background: 'none', border: `1px solid ${purpleBorder}`, borderRadius: '4px', cursor: 'pointer', color: purple, fontSize: '11px', fontWeight: 600, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <RotateCcw size={12} /> Regenerate
+                </button>
+              </div>
+
+              {/* Full script display */}
+              <div style={{
+                backgroundColor: '#F9FAFB',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                padding: '20px 24px',
+                marginBottom: '14px',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ position: 'absolute', top: '10px', right: '14px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.06em' }}>
+                  SCRIPT PREVIEW
+                </div>
+                <div style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: '1.6', fontWeight: 500, fontFamily: 'inherit' }}>
+                  {scriptData.script.full_script}
+                </div>
+              </div>
+
+              {/* Script sections breakdown */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  { label: 'Call Objective', value: scriptData.script.call_objective, icon: <Target size={16} color="#2563eb" />, color: '#2563eb' },
+                  { label: 'Opening', value: scriptData.script.opening, icon: <Volume2 size={16} color="#059669" />, color: '#059669' },
+                  { label: 'Main Offer', value: scriptData.script.main_offer, icon: <Gift size={16} color={purple} />, color: purple },
+                  { label: 'Closing', value: scriptData.script.closing, icon: <Handshake size={16} color="#d97706" />, color: '#d97706' },
+                  { label: 'Call-to-Action', value: scriptData.script.cta, icon: <Megaphone size={16} color="#dc2626" />, color: '#dc2626' },
+                ].map(section => (
+                  <div key={section.label} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: '#fafafa', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{section.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: section.color, marginBottom: '3px' }}>{section.label}</div>
+                      <div style={{ fontSize: '12.5px', color: 'var(--text-primary)', lineHeight: '1.5' }}>{section.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button className="btn btn-secondary" onClick={() => setStep('strategy')}>← Back to Strategy</button>
+              <button
+                className="btn btn-primary"
+                onClick={() => setStep('preview')}
+                style={{ padding: '10px 24px' }}
+              >
+                <Headphones size={14} /> Preview Voice → 
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: VOICE PREVIEW ──────────────────────────────────────── */}
+        {step === 'preview' && scriptData && (
+          <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto' }}>
+            <div className="card" style={{ margin: '0 0 16px 0' }}>
+              <div className="card-title" style={{ marginBottom: '16px' }}>Voice Preview</div>
+
+              {/* Simulated Phone Frame */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                <div style={{
+                  width: '320px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  padding: '20px',
+                }}>
+                  {/* Caller info */}
+                  <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                      {React.createElement('dotlottie-player', {
+                        src: '/e5e93088-1153-11ee-99ca-5b05c2393df2.lottie',
+                        autoplay: true,
+                        loop: true,
+                        style: { width: '120px', height: '120px' }
+                      })}
+                    </div>
+                    <div style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 700 }}>Xenia Offers</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '2px' }}>Verified Business · {scriptData.voice_model_name}</div>
+                    
+                    {/* Real vs Simulated badge */}
+                    <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ color: 'var(--color-accent)', fontSize: '9px', backgroundColor: 'var(--color-accent-light)', padding: '2px 8px', borderRadius: '4px', border: '1px solid #BFDBFE', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <MapPin size={10} /> {scriptData.language}
+                      </span>
+                      {audioLoading ? (
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '9px', backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <RefreshCw size={8} style={{ animation: 'spin 1s linear infinite' }} /> Synthesizing...
+                        </span>
+                      ) : generatedBy === 'elevenlabs' ? (
+                        <span style={{ color: 'var(--color-success)', fontSize: '9px', backgroundColor: 'var(--color-success-bg)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-success-border)' }}>
+                          Voice Synthesis Active
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--color-warning)', fontSize: '9px', backgroundColor: 'var(--color-warning-bg)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-warning-border)' }}>
+                          Simulated
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Waveform animation */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', height: '40px', marginBottom: '16px' }}>
+                    {Array.from({ length: 20 }).map((_, i) => {
+                      const heights = [8, 14, 22, 18, 30, 24, 16, 28, 20, 34, 26, 18, 32, 20, 14, 28, 22, 16, 12, 8];
+                      const barProgress = (i / 20) * 100;
+                      const isActive = isPlaying && barProgress <= playProgress;
+                      const isPast = barProgress <= playProgress;
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            width: '3px',
+                            height: `${heights[i]}px`,
+                            borderRadius: '2px',
+                            background: isPast ? 'var(--color-accent)' : '#E5E7EB',
+                            transition: 'background 0.15s ease',
+                            animation: isActive ? `pulse ${0.3 + (i % 4) * 0.1}s ease-in-out infinite alternate` : 'none'
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ height: '4px', backgroundColor: '#E5E7EB', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${playProgress}%`, backgroundColor: 'var(--color-accent)', borderRadius: '2px', transition: 'width 0.1s linear' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                    <span>{Math.floor((playProgress / 100) * scriptData.estimated_duration_sec)}s</span>
+                    <span>{scriptData.estimated_duration_sec}s</span>
+                  </div>
+
+                  {/* Controls */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+                    <button
+                      onClick={() => {
+                        setPlayProgress(0);
+                        setIsPlaying(false);
+                        if (audioObjRef.current) {
+                          audioObjRef.current.pause();
+                          audioObjRef.current.currentTime = 0;
+                        }
+                        if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+                      }}
+                      style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+                    <button
+                      onClick={handlePlayPreview}
+                      disabled={audioLoading}
+                      style={{ backgroundColor: 'var(--color-accent)', border: 'none', borderRadius: '50%', width: '52px', height: '52px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: audioLoading ? 0.6 : 1 }}
+                    >
+                      {isPlaying ? <PauseCircle size={24} color="#fff" /> : <PlayCircle size={24} color="#fff" />}
+                    </button>
+                    <button
+                      onClick={handleGenerateScript}
+                      style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
+                    >
+                      <RefreshCw size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {audioLoading && (
+                <div style={{ backgroundColor: 'var(--color-accent-light)', border: '1px solid #BFDBFE', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-accent)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                  <strong>Synthesizing Voice...</strong>
+                </div>
+              )}
+              {!audioLoading && audioError && (
+                <div style={{ background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-warning)', textAlign: 'center', marginBottom: '8px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><AlertTriangle size={14} /> <span><strong>Simulated Preview:</strong> {audioError}. Make sure you set a valid API key in Settings.</span></span>
+                </div>
+              )}
+              {!audioLoading && !audioError && generatedBy === 'elevenlabs' && (
+                <div style={{ background: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-success)', textAlign: 'center' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><Sparkles size={14} /> <span><strong>Voice Preview</strong> loaded successfully! Play it above.</span></span>
+                </div>
+              )}
+              {!audioLoading && !audioError && generatedBy === 'mock' && (
+                <div style={{ background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-warning)', textAlign: 'center' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><Volume2 size={14} /> <span><strong>Simulated Preview</strong> — Set a valid API key in Settings to enable real audio synthesis.</span></span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button className="btn btn-secondary" onClick={() => setStep('script')}>← Back to Script</button>
+              <button
+                className="btn btn-primary"
+                onClick={() => setStep('cost')}
+                style={{ padding: '10px 24px' }}
+              >
+                View Cost Estimation →
+              </button>
+            </div>
+          </div>
+        )}
+        {step === 'cost' && scriptData && audienceData && (
+          <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto' }}>
+            {audienceData.summary.total_identified > 1000 && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecdd3', borderRadius: '6px', padding: '14px 18px', marginBottom: '16px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <AlertOctagon size={18} color="#991b1b" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#991b1b', marginBottom: '3px' }}>
+                    Large Audience Detected ({audienceData.summary.total_identified.toLocaleString('en-IN')} shoppers)
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
+                    Voice campaigns at this scale are very expensive. Consider splitting into smaller batches of 200–300 shoppers or switching to WhatsApp for cost efficiency.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="card" style={{ margin: '0 0 16px 0' }}>
+              <div className="card-title" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BarChart2 size={18} color="var(--color-accent)" /> Campaign Cost Estimation
+              </div>
+              <div className="table-container" style={{ margin: 0 }}>
+                <table className="enterprise-table">
+                  <tbody>
+                    {[
+                      { metric: 'Target Customers', value: audienceData.summary.total_identified.toLocaleString('en-IN'), highlight: false },
+                      { metric: 'Estimated Call Duration', value: `~${scriptData.estimated_duration_sec} seconds`, highlight: false },
+                      { metric: 'Estimated Total Call Minutes', value: `${Math.round(audienceData.summary.total_identified * scriptData.estimated_duration_sec / 60).toLocaleString('en-IN')} min`, highlight: false },
+                      { metric: 'Cost Per Call (Voice Synthesis)', value: `₹${scriptData.estimated_cost_per_call_inr.toFixed(2)}`, highlight: false },
+                      { metric: 'Estimated Total Campaign Cost', value: `₹${scriptData.estimated_total_cost_inr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, highlight: true },
+                      { metric: 'Potential Recovery Revenue', value: `₹${(audienceData.summary.potential_recovery_value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, highlight: false },
+                      { metric: 'Estimated ROI', value: `${Math.round(audienceData.summary.potential_recovery_value / Math.max(scriptData.estimated_total_cost_inr, 1))}x`, highlight: true },
+                    ].map(row => (
+                      <tr key={row.metric} style={row.highlight ? { background: purpleLight } : {}}>
+                        <td style={{ fontWeight: 500 }}>{row.metric}</td>
+                        <td className="mono-align" style={{ fontWeight: row.highlight ? 700 : 400, color: row.highlight ? purple : 'var(--text-primary)' }}>{row.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button className="btn btn-secondary" onClick={() => setStep('preview')}>← Back to Preview</button>
+              <button
+                className="btn btn-primary"
+                onClick={() => setStep('approval')}
+                style={{ padding: '10px 24px' }}
+              >
+                Review & Approve →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 6: APPROVAL ───────────────────────────────────────────── */}
+        {step === 'approval' && scriptData && audienceData && (
+          <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto' }}>
+            <div className="card" style={{ margin: '0 0 16px 0' }}>
+              <div className="card-title" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={18} color="var(--color-accent)" /> Campaign Approval Summary
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: '13px', marginBottom: '16px' }}>
+                {[
+                  { label: 'Audience', value: `${audienceData.summary.total_identified} shoppers` },
+                  { label: 'Segments', value: Object.keys(audienceData.summary.segment_distribution).join(', ') },
+                  { label: 'Voice Model', value: scriptData.voice_model_name },
+                  { label: 'Language', value: scriptData.language },
+                  { label: 'Voice Tone', value: voiceTone },
+                  { label: 'Promo Code', value: promoCode },
+                  { label: 'Discount', value: `${discountValue}% off` },
+                  { label: 'Est. Duration', value: `${scriptData.estimated_duration_sec}s per call` },
+                  { label: 'Estimated Cost', value: `₹${scriptData.estimated_total_cost_inr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` },
+                  { label: 'Expected Recovery', value: `₹${(audienceData.summary.potential_recovery_value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` },
+                ].map(row => (
+                  <div key={row.label} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>{row.label}</span>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{row.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Script preview */}
+              <div style={{ background: '#F9FAFB', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '16px', fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.6', marginBottom: '14px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: purple, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FileText size={12} /> Script Preview
+                </div>
+                "{scriptData.script.full_script}"
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setStep('cost')}>← Back</button>
+              <button className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Save size={14} /> Save Draft
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSimulateCalls}
+                disabled={simLoading}
+                style={{ padding: '10px 28px', fontSize: '13.5px' }}
+              >
+                {simLoading ? (
+                  <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Simulating Calls...</>
+                ) : (
+                  <><PhoneCall size={14} /> Approve & Launch Voice Campaign</>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 7: TRACKING DASHBOARD ─────────────────────────────────── */}
+        {step === 'tracking' && simData && (
+          <div className="fade-in">
+            {/* KPI Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              {[
+                { label: 'Calls Initiated',      value: simData.total_calls_initiated, icon: <Phone size={16} />, color: '#2563eb' },
+                { label: 'Calls Answered',        value: simData.calls_answered,        icon: <PhoneCall size={16} />, color: '#059669' },
+                { label: 'Calls Completed',       value: simData.calls_completed,       icon: <CheckCircle2 size={16} />, color: '#059669' },
+                { label: 'No Answer / Dropped',   value: simData.calls_no_answer + simData.calls_dropped, icon: <PhoneMissed size={16} />, color: '#dc2626' },
+                { label: 'Interested Customers',  value: simData.interested_customers,  icon: <TrendingUp size={16} />, color: purple },
+                { label: 'Promo Code Sent',       value: simData.promo_sent,            icon: <MessageSquare size={16} />, color: '#d97706' },
+                { label: 'Attributed Purchases',  value: simData.attributed_purchases,  icon: <CheckSquare size={16} />, color: '#059669' },
+                { label: 'Revenue Generated',     value: `₹${simData.total_revenue_generated.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, icon: <DollarSign size={16} />, color: '#059669' },
+              ].map(kpi => (
+                <div key={kpi.label} style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                    {kpi.icon}
+                    <span style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{kpi.label}</span>
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{kpi.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* ROI & Cost summary */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div className="card" style={{ margin: 0, padding: '14px' }}>
+                <div className="card-title" style={{ marginBottom: '12px' }}>Campaign Economics</div>
+                {[
+                  { label: 'Est. Voice Synthesis Cost', value: `₹${simData.estimated_cost_inr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, color: '#dc2626' },
+                  { label: 'Revenue Attributed', value: `₹${simData.total_revenue_generated.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, color: '#059669' },
+                  { label: 'Campaign ROI', value: `${simData.estimated_roi.toFixed(1)}x`, color: purple },
+                  { label: 'Answer Rate', value: `${Math.round((simData.calls_answered / simData.total_calls_initiated) * 100)}%`, color: '#2563eb' },
+                  { label: 'Completion Rate', value: `${Math.round((simData.calls_completed / simData.total_calls_initiated) * 100)}%`, color: '#059669' },
+                  { label: 'Conversion Rate', value: `${Math.round((simData.attributed_purchases / simData.total_calls_initiated) * 100)}%`, color: purple },
+                ].map(row => (
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{row.label}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="card" style={{ margin: 0, padding: '14px' }}>
+                <div className="card-title" style={{ marginBottom: '12px' }}>Call Status Distribution</div>
+                {[
+                  { label: 'Completed', count: simData.calls_completed, color: '#059669', pct: simData.total_calls_initiated },
+                  { label: 'No Answer', count: simData.calls_no_answer, color: '#d97706', pct: simData.total_calls_initiated },
+                  { label: 'Dropped', count: simData.calls_dropped, color: '#dc2626', pct: simData.total_calls_initiated },
+                ].map(row => (
+                  <div key={row.label} style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 500 }}>{row.label}</span>
+                      <span style={{ fontSize: '12px', color: row.color, fontWeight: 700 }}>{row.count} ({Math.round((row.count / row.pct) * 100)}%)</span>
+                    </div>
+                    <div style={{ height: '6px', background: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${Math.round((row.count / row.pct) * 100)}%`, background: row.color, borderRadius: '3px', transition: 'width 1s ease' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Individual Shopper Tracking Table */}
+            <div className="card" style={{ margin: 0 }}>
+              <div className="card-title" style={{ marginBottom: '12px' }}>
+                Individual Call Tracking
+                <span style={{ fontSize: '10px', background: purpleLight, color: purple, padding: '2px 8px', borderRadius: '3px', fontWeight: 600 }}>
+                  Click a shopper to view call journey
+                </span>
+              </div>
+              <div className="table-container" style={{ margin: 0 }}>
+                <table className="enterprise-table">
+                  <thead>
+                    <tr>
+                      <th>Shopper</th>
+                      <th>City</th>
+                      <th>Segment</th>
+                      <th className="mono-align">LTV</th>
+                      <th>Call Status</th>
+                      <th className="mono-align">Duration</th>
+                      <th>Promo Sent</th>
+                      <th className="mono-align">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {simData.shopper_events.map((ev, idx) => (
+                      <tr
+                        key={idx}
+                        onClick={() => setSelectedCallEvent(ev)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>{ev.shopper_name}</td>
+                        <td style={{ color: 'var(--text-secondary)' }}>{ev.city}</td>
+                        <td>
+                          <span style={{
+                            fontSize: '10px', padding: '2px 6px', borderRadius: '3px', fontWeight: 600,
+                            background: ev.segment === 'Champion' ? '#f0fdf4' : purpleLight,
+                            color: ev.segment === 'Champion' ? '#059669' : purple
+                          }}>
+                            {ev.segment}
+                          </span>
+                        </td>
+                        <td className="mono-align">₹{ev.ltv.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                        <td>
+                          <span style={{
+                            fontSize: '10px', padding: '2px 7px', borderRadius: '3px', fontWeight: 600,
+                            background: ev.call_status === 'completed' ? '#f0fdf4' : ev.call_status === 'no_answer' ? '#fff7ed' : '#fef2f2',
+                            color: ev.call_status === 'completed' ? '#059669' : ev.call_status === 'no_answer' ? '#d97706' : '#dc2626'
+                          }}>
+                            {ev.call_status === 'completed' ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={11} /> Completed</span>
+                            ) : ev.call_status === 'no_answer' ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><PhoneOff size={11} /> No Answer</span>
+                            ) : (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><XCircle size={11} /> Dropped</span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="mono-align">{ev.duration_sec ? `${ev.duration_sec}s` : '—'}</td>
+                        <td>
+                          {ev.promo_sent ? (
+                            <span style={{ fontSize: '10px', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', padding: '2px 6px', borderRadius: '3px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Send size={11} /> Sent
+                            </span>
+                          ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                        </td>
+                        <td className="mono-align" style={{ fontWeight: ev.attributed_revenue ? 700 : 400, color: ev.attributed_revenue ? '#059669' : 'var(--text-muted)' }}>
+                          {ev.attributed_revenue ? `₹${ev.attributed_revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SHOPPER CALL JOURNEY DRAWER ────────────────────────────────── */}
+        {selectedCallEvent && (
+          <div className="drawer-backdrop" onClick={() => setSelectedCallEvent(null)}>
+            <div className="drawer-container" style={{ width: '38%', minWidth: '440px' }} onClick={e => e.stopPropagation()}>
+              <div className="drawer-header" style={{ borderBottom: `2px solid ${purpleBorder}` }}>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: purple, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <PhoneCall size={16} /> Call Journey: {selectedCallEvent.shopper_name}
+                  </h3>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    {selectedCallEvent.city} · {selectedCallEvent.segment} · LTV ₹{selectedCallEvent.ltv.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+                <button onClick={() => setSelectedCallEvent(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="drawer-body">
+                {/* Call status badge */}
+                <div style={{ marginBottom: '20px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: '11px', padding: '4px 12px', borderRadius: '4px', fontWeight: 700,
+                    background: selectedCallEvent.call_status === 'completed' ? '#f0fdf4' : selectedCallEvent.call_status === 'no_answer' ? '#fff7ed' : '#fef2f2',
+                    color: selectedCallEvent.call_status === 'completed' ? '#059669' : '#dc2626',
+                    border: `1px solid ${selectedCallEvent.call_status === 'completed' ? '#bbf7d0' : selectedCallEvent.call_status === 'no_answer' ? '#fed7aa' : '#fecdd3'}`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    {selectedCallEvent.call_status === 'completed' ? (
+                      <><CheckCircle2 size={12} /> Call Completed</>
+                    ) : selectedCallEvent.call_status === 'no_answer' ? (
+                      <><PhoneOff size={12} /> No Answer</>
+                    ) : (
+                      <><XCircle size={12} /> Call Dropped</>
+                    )}
+                  </span>
+                  {selectedCallEvent.duration_sec && (
+                    <span style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '4px', fontWeight: 600, background: purpleLight, color: purple, border: `1px solid ${purpleBorder}`, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={12} /> {selectedCallEvent.duration_sec}s duration
+                    </span>
+                  )}
+                  {selectedCallEvent.purchase_attributed && (
+                    <span style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '4px', fontWeight: 700, background: '#f0fdf4', color: '#059669', border: '1px solid #bbf7d0', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <ShoppingBag size={12} /> Purchase Attributed
+                    </span>
+                  )}
+                </div>
+
+                {/* Timeline */}
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                    Call Journey Timeline
+                  </div>
+                  <div style={{ position: 'relative', paddingLeft: '28px' }}>
+                    {/* Vertical line */}
+                    <div style={{ position: 'absolute', left: '11px', top: '8px', bottom: '8px', width: '2px', background: purpleBorder }} />
+                    {selectedCallEvent.timeline.map((event, idx) => (
+                      <div key={idx} style={{ position: 'relative', marginBottom: '16px' }}>
+                        {/* Dot */}
+                        <div style={{
+                          position: 'absolute', left: '-28px', top: '2px',
+                          width: '22px', height: '22px', borderRadius: '50%',
+                          background: '#fff', border: `2px solid ${purple}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '11px', zIndex: 1
+                        }}>
+                          {renderTimelineIcon(event.icon)}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{event.event}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>{event.time}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Attributed Revenue */}
+                {selectedCallEvent.attributed_revenue && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#059669', letterSpacing: '0.06em', marginBottom: '4px' }}>Attributed Revenue</div>
+                    <div style={{ fontSize: '26px', fontWeight: 700, color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
+                      ₹{selectedCallEvent.attributed_revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#047857', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                      <CheckCircle2 size={12} /> Voice campaign conversion
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── LAUNCHING DIALER PROGRESS OVERLAY ──────────────────────────── */}
+        {isLaunching && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(4px)',
+          }}>
+            <div style={{
+              width: '540px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '32px',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+              textAlign: 'center',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+                <object
+                  data="/voice-agent-working-animation.svg"
+                  type="image/svg+xml"
+                  style={{ width: '280px', height: '280px' }}
+                />
+              </div>
+              
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                Launching Voice Campaign
+              </h3>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                Please wait while the AI voice agent configures the outbound dialer queue.
+              </p>
+
+              {/* Progress Bar */}
+              <div style={{
+                height: '6px',
+                backgroundColor: '#E5E7EB',
+                borderRadius: '3px',
+                marginBottom: '8px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${launchProgress}%`,
+                  backgroundColor: 'var(--color-accent)',
+                  borderRadius: '3px',
+                  transition: 'width 0.1s linear'
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: 'var(--color-accent)', marginBottom: '24px' }}>
+                <span>{Math.round(launchProgress)}% Completed</span>
+                <span>5.0s</span>
+              </div>
+
+              {/* Logs */}
+              <div style={{
+                backgroundColor: '#F9FAFB',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                padding: '12px 16px',
+                textAlign: 'left',
+                height: '120px',
+                overflowY: 'auto',
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: '11px',
+                lineHeight: '1.6',
+                color: 'var(--text-secondary)'
+              }}>
+                {launchLogs.map((log, i) => (
+                  <div key={i} style={{ marginBottom: '4px', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                    <span style={{ color: 'var(--color-accent)' }}>&gt;</span>
+                    <span>{log}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 8. SETTINGS VIEW — API Key Management
+  // ────────────────────────────────────────────────────────────────────────────
+  function SettingsView() {
+    const [status, setStatus] = useState<ApiKeyStatus | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
+
+    // Input state
+    const [groqKey, setGroqKey] = useState('');
+    const [elevenKey, setElevenKey] = useState('');
+    const [showGroq, setShowGroq] = useState(false);
+    const [showEleven, setShowEleven] = useState(false);
+
+    useEffect(() => {
+      api.getApiKeyStatus()
+        .then(d => { setStatus(d); setLoading(false); })
+        .catch(() => setLoading(false));
+    }, []);
+
+    const handleSave = async () => {
+      if (!groqKey.trim() && !elevenKey.trim()) {
+        setSaveError('Enter at least one API key to update');
+        return;
+      }
+      setSaving(true);
+      setSaveSuccess(null);
+      setSaveError(null);
+      try {
+        const payload: { groq_api_key?: string; elevenlabs_api_key?: string } = {};
+        if (groqKey.trim()) payload.groq_api_key = groqKey.trim();
+        if (elevenKey.trim()) payload.elevenlabs_api_key = elevenKey.trim();
+        const fresh = await api.updateApiKeys(payload);
+        setStatus(fresh);
+        setGroqKey('');
+        setElevenKey('');
+        setSaveSuccess('API keys updated successfully! Changes are live immediately — no restart needed.');
+        setTimeout(() => setSaveSuccess(null), 6000);
+      } catch (e: any) {
+        setSaveError(e.message || 'Failed to update keys');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <div className="fade-in" style={{ maxWidth: '680px', margin: '0 auto' }}>
+        {/* Header banner */}
+        <div style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          padding: '20px 24px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{ width: '42px', height: '42px', background: 'var(--color-accent-light)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Settings size={22} color="var(--color-accent)" />
+          </div>
+          <div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>System Settings</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              Manage API credentials · Changes take effect immediately without server restart
+            </div>
+          </div>
+        </div>
+
+        {/* Current key status */}
+        {loading ? (
+          <SkeletonLoader type="kpi" rows={2} />
+        ) : status && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+            {[
+              {
+                name: 'Generative AI Engine',
+                subtitle: 'Drafts shopper engagement scripts',
+                icon: '📝',
+                isSet: status.groq_api_key_set,
+                preview: status.groq_api_key_preview,
+                color: 'var(--color-success)',
+                badgeClass: status.groq_api_key_set ? 'badge-success' : 'badge-neutral',
+                bgColor: 'var(--color-success-bg)',
+                borderColor: 'var(--color-success-border)'
+              },
+              {
+                name: 'Elevenlabs Voice Engine',
+                subtitle: 'Synthesizes campaign call audio',
+                icon: '🔊',
+                isSet: status.elevenlabs_api_key_set,
+                preview: status.elevenlabs_api_key_preview,
+                color: 'var(--color-accent)',
+                badgeClass: status.elevenlabs_api_key_set ? 'badge-primary' : 'badge-neutral',
+                bgColor: 'var(--color-accent-light)',
+                borderColor: 'var(--color-accent-border, #fca5a5)'
+              }
+            ].map(card => (
+              <div key={card.name} style={{
+                background: '#fff',
+                border: `1px solid ${card.isSet ? card.borderColor : 'var(--border-color)'}`,
+                borderRadius: '6px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '100%',
+                boxSizing: 'border-box'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '18px' }}>{card.icon}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{card.name}</span>
+                    <span className={`badge ${card.badgeClass}`} style={{ marginLeft: 'auto' }}>
+                      {card.isSet ? 'Active' : 'Not Set'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', minHeight: '34px' }}>{card.subtitle}</div>
+                </div>
+                <div style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: '11.5px',
+                  color: card.isSet ? card.color : 'var(--text-muted)',
+                  background: card.isSet ? card.bgColor : '#f9fafb',
+                  padding: '6px 10px',
+                  borderRadius: '4px',
+                  border: `1px solid ${card.isSet ? card.borderColor : 'var(--border-color)'}`,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {card.preview}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Update form */}
+        <div className="workspace-panel" style={{ margin: '0 0 24px 0' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Key size={16} color="var(--text-secondary)" />
+            Update API Keys
+          </div>
+
+          {/* Groq */}
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Generative AI API Key
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                className="form-input"
+                type={showGroq ? 'text' : 'password'}
+                value={groqKey}
+                onChange={e => setGroqKey(e.target.value)}
+                placeholder="gsk_••••••••••••••••••••••••"
+                autoComplete="off"
+                style={{ fontFamily: 'var(--mono)', letterSpacing: '0.05em', paddingRight: '40px' }}
+              />
+              <button
+                onClick={() => setShowGroq(!showGroq)}
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}
+              >
+                {showGroq ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>
+              Leave blank to keep the current key unchanged
+            </div>
+          </div>
+
+          {/* ElevenLabs */}
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Elevenlabs API Key
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                className="form-input"
+                type={showEleven ? 'text' : 'password'}
+                value={elevenKey}
+                onChange={e => setElevenKey(e.target.value)}
+                placeholder="sk_••••••••••••••••••••••••"
+                autoComplete="off"
+                style={{ fontFamily: 'var(--mono)', letterSpacing: '0.05em', paddingRight: '40px' }}
+              />
+              <button
+                onClick={() => setShowEleven(!showEleven)}
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}
+              >
+                {showEleven ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>
+              Leave blank to keep the current key unchanged
+            </div>
+          </div>
+        </div>
+
+        {/* Feedback messages */}
+        {saveSuccess && (
+          <div style={{ background: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', borderRadius: '6px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <CheckCircle size={16} color="var(--color-success)" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span style={{ fontSize: '13px', color: 'var(--color-success)', fontWeight: 500 }}>{saveSuccess}</span>
+          </div>
+        )}
+        {saveError && (
+          <div style={{ background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', borderRadius: '6px', padding: '12px 16px', marginBottom: '16px', color: 'var(--color-danger)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={16} color="var(--color-danger)" />
+            <span>{saveError}</span>
+          </div>
+        )}
+
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={saving || (!groqKey.trim() && !elevenKey.trim())}
+          style={{
+            padding: '12px 28px',
+            fontSize: '14px',
+            width: '100%',
+            justifyContent: 'center'
+          }}
+        >
+          {saving ? (
+            <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Saving to .env & reloading...</>
+          ) : (
+            <><Save size={14} /> Save API Keys</>
+          )}
+        </button>
+
+        {/* Info card */}
+        <div style={{ marginTop: '24px', background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: '6px', padding: '16px 20px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-warning)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            ℹ️ How this works
+          </div>
+          <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: '13px', color: '#78350f', lineHeight: '1.7' }}>
+            <li>Keys are written directly to the backend <code style={{ background: '#fef3c7', padding: '2px 4px', borderRadius: '3px', fontFamily: 'var(--mono)' }}>.env</code> file</li>
+            <li>The backend settings cache is cleared immediately — no restart needed</li>
+            <li>Generative AI key changes reload the generator client instantly</li>
+            <li>Elevenlabs key activates real synthesis in Voice Campaigns Preview step</li>
+            <li>Keys are never sent to the frontend — only masked previews are shown</li>
+          </ul>
+        </div>
+
+        {status && (
+          <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+            📄 Config file: <code style={{ fontFamily: 'var(--mono)' }}>{status.env_file_path}</code>
+          </div>
+        )}
+      </div>
+    );
+  }
 }
+
