@@ -52,6 +52,61 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
     };
   }, []);
 
+  // Chatbase chatbot widget integration
+  useEffect(() => {
+    const win = window as any;
+    if (!win.chatbase || win.chatbase("getState") !== "initialized") {
+      win.chatbase = (...args: any[]) => {
+        if (!win.chatbase.q) {
+          win.chatbase.q = [];
+        }
+        win.chatbase.q.push(args);
+      };
+      win.chatbase = new Proxy(win.chatbase, {
+        get(target, prop) {
+          if (prop === "q") {
+            return target.q;
+          }
+          return (...args: any[]) => target(prop, ...args);
+        }
+      });
+    }
+
+    const onLoad = function () {
+      const script = document.createElement("script");
+      script.src = "https://www.chatbase.co/embed.min.js";
+      script.id = "nSFGl9WWd7gsbPpyUhO-3";
+      script.domain = "www.chatbase.co";
+      document.body.appendChild(script);
+      win.chatbaseScriptElement = script;
+    };
+
+    if (document.readyState === "complete") {
+      onLoad();
+    } else {
+      window.addEventListener("load", onLoad);
+    }
+
+    return () => {
+      if (win.chatbaseScriptElement) {
+        win.chatbaseScriptElement.remove();
+        win.chatbaseScriptElement = null;
+      }
+      
+      // Clean up chatbase bubble and bubble-window iframes
+      const bubbleFrame = document.getElementById("chatbase-bubble-window");
+      if (bubbleFrame) bubbleFrame.remove();
+      
+      const bubbleButton = document.getElementById("chatbase-bubble-button");
+      if (bubbleButton) bubbleButton.remove();
+
+      const chatbaseElements = document.querySelectorAll("[id^='chatbase']");
+      chatbaseElements.forEach(el => el.remove());
+
+      delete win.chatbase;
+    };
+  }, []);
+
   return (
     <div className="zoho-landing-container">
       {/* Dynamic Style Sheet injection for landing page specific styles */}
