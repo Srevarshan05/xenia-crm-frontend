@@ -5765,137 +5765,166 @@ export default function App() {
 
         {/* ── STEP 4: VOICE PREVIEW ──────────────────────────────────────── */}
         {step === 'preview' && scriptData && (
-          <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto' }}>
-            <div className="card" style={{ margin: '0 0 16px 0' }}>
-              <div className="card-title" style={{ marginBottom: '16px' }}>Voice Preview</div>
+          <div className="fade-in" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="card" style={{ margin: '0 0 16px 0', padding: '24px 32px' }}>
+              <div className="card-title" style={{ marginBottom: '24px', fontSize: '18px', fontWeight: 700, borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                Voice Advertisement Preview
+              </div>
 
-              {/* Simulated Phone Frame */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-                <div style={{
-                  width: '320px',
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                  padding: '20px',
-                }}>
-                  {/* Caller info */}
-                  <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-                      {React.createElement('dotlottie-player', {
-                        src: '/e5e93088-1153-11ee-99ca-5b05c2393df2.lottie',
-                        autoplay: true,
-                        loop: true,
-                        style: { width: '120px', height: '120px' }
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '40px', alignItems: 'start', marginBottom: '24px' }}>
+                {/* Left Column: Simulated Phone Frame / Player */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{
+                    width: '100%',
+                    maxWidth: '420px',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '28px 24px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.02)'
+                  }}>
+                    {/* Caller info */}
+                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                        {React.createElement('dotlottie-player', {
+                          src: '/e5e93088-1153-11ee-99ca-5b05c2393df2.lottie',
+                          autoplay: true,
+                          loop: true,
+                          style: { width: '180px', height: '180px' }
+                        })}
+                      </div>
+                      <div style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 700 }}>Xenia Offers</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px' }}>Verified Business · {scriptData.voice_model_name}</div>
+                      
+                      {/* Real vs Simulated badge */}
+                      <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ color: 'var(--color-accent)', fontSize: '10px', backgroundColor: 'var(--color-accent-light)', padding: '3px 10px', borderRadius: '4px', border: '1px solid var(--color-accent-border)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <MapPin size={11} /> {scriptData.language}
+                        </span>
+                        {audioLoading ? (
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '10px', backgroundColor: '#F3F4F6', padding: '3px 10px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <RefreshCw size={9} style={{ animation: 'spin 1s linear infinite' }} /> Synthesizing...
+                          </span>
+                        ) : generatedBy === 'elevenlabs' ? (
+                          <span style={{ color: 'var(--color-success)', fontSize: '10px', backgroundColor: 'var(--color-success-bg)', padding: '3px 10px', borderRadius: '4px', border: '1px solid var(--color-success-border)' }}>
+                            Voice Synthesis Active
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--color-warning)', fontSize: '10px', backgroundColor: 'var(--color-warning-bg)', padding: '3px 10px', borderRadius: '4px', border: '1px solid var(--color-warning-border)' }}>
+                            Simulated
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Waveform animation */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '60px', marginBottom: '24px' }}>
+                      {Array.from({ length: 28 }).map((_, i) => {
+                        const heights = [10, 16, 26, 20, 36, 28, 18, 32, 24, 42, 32, 20, 38, 24, 18, 32, 26, 18, 14, 10, 18, 30, 22, 38, 28, 20, 14, 10];
+                        const barProgress = (i / 28) * 100;
+                        const isActive = isPlaying && barProgress <= playProgress;
+                        const isPast = barProgress <= playProgress;
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              width: '4px',
+                              height: `${heights[i]}px`,
+                              borderRadius: '2px',
+                              background: isPast ? 'var(--color-accent)' : '#E5E7EB',
+                              transition: 'background 0.15s ease',
+                              animation: isActive ? `pulse ${0.3 + (i % 4) * 0.1}s ease-in-out infinite alternate` : 'none'
+                            }}
+                          />
+                        );
                       })}
                     </div>
-                    <div style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 700 }}>Xenia Offers</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '2px' }}>Verified Business · {scriptData.voice_model_name}</div>
-                    
-                    {/* Real vs Simulated badge */}
-                    <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span style={{ color: 'var(--color-accent)', fontSize: '9px', backgroundColor: 'var(--color-accent-light)', padding: '2px 8px', borderRadius: '4px', border: '1px solid #BFDBFE', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <MapPin size={10} /> {scriptData.language}
-                      </span>
-                      {audioLoading ? (
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '9px', backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <RefreshCw size={8} style={{ animation: 'spin 1s linear infinite' }} /> Synthesizing...
-                        </span>
-                      ) : generatedBy === 'elevenlabs' ? (
-                        <span style={{ color: 'var(--color-success)', fontSize: '9px', backgroundColor: 'var(--color-success-bg)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-success-border)' }}>
-                          Voice Synthesis Active
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--color-warning)', fontSize: '9px', backgroundColor: 'var(--color-warning-bg)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-warning-border)' }}>
-                          Simulated
-                        </span>
-                      )}
+
+                    {/* Progress bar */}
+                    <div style={{ height: '6px', backgroundColor: '#E5E7EB', borderRadius: '3px', marginBottom: '14px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${playProgress}%`, backgroundColor: 'var(--color-accent)', borderRadius: '3px', transition: 'width 0.1s linear' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                      <span>{Math.floor((playProgress / 100) * scriptData.estimated_duration_sec)}s</span>
+                      <span>{scriptData.estimated_duration_sec}s</span>
+                    </div>
+
+                    {/* Controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+                      <button
+                        onClick={() => {
+                          setPlayProgress(0);
+                          setIsPlaying(false);
+                          if (audioObjRef.current) {
+                            audioObjRef.current.pause();
+                            audioObjRef.current.currentTime = 0;
+                          }
+                          if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+                        }}
+                        style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '50%', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', transition: 'all 0.2s' }}
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                      <button
+                        onClick={handlePlayPreview}
+                        disabled={audioLoading}
+                        style={{ backgroundColor: 'var(--color-accent)', border: 'none', borderRadius: '50%', width: '60px', height: '60px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: audioLoading ? 0.6 : 1, transition: 'all 0.2s' }}
+                      >
+                        {isPlaying ? <PauseCircle size={28} color="#fff" /> : <PlayCircle size={28} color="#fff" />}
+                      </button>
+                      <button
+                        onClick={handleGenerateScript}
+                        style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '50%', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', transition: 'all 0.2s' }}
+                      >
+                        <RefreshCw size={16} />
+                      </button>
                     </div>
                   </div>
+                </div>
 
-                  {/* Waveform animation */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', height: '40px', marginBottom: '16px' }}>
-                    {Array.from({ length: 20 }).map((_, i) => {
-                      const heights = [8, 14, 22, 18, 30, 24, 16, 28, 20, 34, 26, 18, 32, 20, 14, 28, 22, 16, 12, 8];
-                      const barProgress = (i / 20) * 100;
-                      const isActive = isPlaying && barProgress <= playProgress;
-                      const isPast = barProgress <= playProgress;
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            width: '3px',
-                            height: `${heights[i]}px`,
-                            borderRadius: '2px',
-                            background: isPast ? 'var(--color-accent)' : '#E5E7EB',
-                            transition: 'background 0.15s ease',
-                            animation: isActive ? `pulse ${0.3 + (i % 4) * 0.1}s ease-in-out infinite alternate` : 'none'
-                          }}
-                        />
-                      );
-                    })}
+                {/* Right Column: Outbound Script Content */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                    Personalized Outbound Script
                   </div>
-
-                  {/* Progress bar */}
-                  <div style={{ height: '4px', backgroundColor: '#E5E7EB', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${playProgress}%`, backgroundColor: 'var(--color-accent)', borderRadius: '2px', transition: 'width 0.1s linear' }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                    <span>{Math.floor((playProgress / 100) * scriptData.estimated_duration_sec)}s</span>
-                    <span>{scriptData.estimated_duration_sec}s</span>
-                  </div>
-
-                  {/* Controls */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-                    <button
-                      onClick={() => {
-                        setPlayProgress(0);
-                        setIsPlaying(false);
-                        if (audioObjRef.current) {
-                          audioObjRef.current.pause();
-                          audioObjRef.current.currentTime = 0;
-                        }
-                        if (playIntervalRef.current) clearInterval(playIntervalRef.current);
-                      }}
-                      style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
-                    >
-                      <RotateCcw size={14} />
-                    </button>
-                    <button
-                      onClick={handlePlayPreview}
-                      disabled={audioLoading}
-                      style={{ backgroundColor: 'var(--color-accent)', border: 'none', borderRadius: '50%', width: '52px', height: '52px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: audioLoading ? 0.6 : 1 }}
-                    >
-                      {isPlaying ? <PauseCircle size={24} color="#fff" /> : <PlayCircle size={24} color="#fff" />}
-                    </button>
-                    <button
-                      onClick={handleGenerateScript}
-                      style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
-                    >
-                      <RefreshCw size={14} />
-                    </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {[
+                      { label: 'Opening Greeting', value: scriptData.script.opening, icon: <Volume2 size={16} color="var(--color-accent)" />, color: 'var(--color-accent)' },
+                      { label: 'Main Value Offer', value: scriptData.script.main_offer, icon: <Gift size={16} color="#059669" />, color: '#059669' },
+                      { label: 'Call-to-Action', value: scriptData.script.cta, icon: <Megaphone size={16} color="#d97706" />, color: '#d97706' },
+                      { label: 'Closing Signature', value: scriptData.script.closing, icon: <Handshake size={16} color="#7c3aed" />, color: '#7c3aed' },
+                    ].map(section => (
+                      <div key={section.label} style={{ display: 'flex', gap: '14px', padding: '14px 16px', background: '#fafafa', borderRadius: '6px', border: '1px solid var(--border-color)', borderLeft: `4px solid ${section.color}` }}>
+                        <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{section.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: section.color, marginBottom: '4px' }}>{section.label}</div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.6' }}>{section.value}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {audioLoading && (
-                <div style={{ backgroundColor: 'var(--color-accent-light)', border: '1px solid #BFDBFE', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-accent)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <div style={{ backgroundColor: 'var(--color-accent-light)', border: '1px solid var(--color-accent-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-accent)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
                   <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
                   <strong>Synthesizing Voice...</strong>
                 </div>
               )}
               {!audioLoading && audioError && (
-                <div style={{ background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-warning)', textAlign: 'center', marginBottom: '8px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><AlertTriangle size={14} /> <span><strong>Simulated Preview:</strong> {audioError}. Make sure you set a valid API key in Settings.</span></span>
+                <div style={{ background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-warning)', textAlign: 'center', marginBottom: '8px', marginTop: '16px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><AlertTriangle size={14} /> <span><strong>Simulated Preview:</strong> {audioError}. Make sure you set a valid Elevenlabs API key in Settings.</span></span>
                 </div>
               )}
               {!audioLoading && !audioError && generatedBy === 'elevenlabs' && (
-                <div style={{ background: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-success)', textAlign: 'center' }}>
+                <div style={{ background: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-success)', textAlign: 'center', marginTop: '16px' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><Sparkles size={14} /> <span><strong>Voice Preview</strong> loaded successfully! Play it above.</span></span>
                 </div>
               )}
               {!audioLoading && !audioError && generatedBy === 'mock' && (
-                <div style={{ background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-warning)', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><Volume2 size={14} /> <span><strong>Simulated Preview</strong> — Set a valid API key in Settings to enable real audio synthesis.</span></span>
+                <div style={{ background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: '6px', padding: '10px 14px', fontSize: '11.5px', color: 'var(--color-warning)', textAlign: 'center', marginTop: '16px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}><Volume2 size={14} /> <span><strong>Simulated Preview</strong> — Set a valid Elevenlabs API key in Settings to enable real audio synthesis.</span></span>
                 </div>
               )}
             </div>
