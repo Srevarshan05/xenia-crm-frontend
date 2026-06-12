@@ -201,7 +201,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           justify-content: center;
           width: 32px;
           height: 32px;
-          background-color: #e31a22;
+          background-color: #0d9488;
           color: #ffffff;
           border-radius: 6px;
           font-weight: 800;
@@ -226,7 +226,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           transition: color 0.15s ease;
         }
         .zoho-nav-link:hover {
-          color: #e31a22;
+          color: #0d9488;
         }
         
         .zoho-nav-actions {
@@ -245,11 +245,11 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           transition: color 0.15s ease;
         }
         .zoho-btn-text:hover {
-          color: #e31a22;
+          color: #0d9488;
         }
         
         .zoho-btn-red {
-          background-color: #e31a22;
+          background-color: #0d9488;
           color: #ffffff;
           font-weight: 600;
           font-size: 14.5px;
@@ -263,17 +263,17 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           gap: 6px;
         }
         .zoho-btn-red:hover {
-          background-color: #c51218;
+          background-color: #0f766e;
         }
         
         .zoho-btn-outline {
           background: none;
-          color: #4a5568;
+          color: #0d9488;
           font-weight: 600;
           font-size: 14.5px;
           padding: 10px 22px;
           border-radius: 4px;
-          border: 1px solid #cbd5e1;
+          border: 1px solid #0d9488;
           cursor: pointer;
           transition: all 0.15s ease;
           display: inline-flex;
@@ -281,9 +281,9 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           gap: 6px;
         }
         .zoho-btn-outline:hover {
-          background-color: #f8fafc;
-          border-color: #94a3b8;
-          color: #0f172a;
+          background-color: #f0fdfa;
+          border-color: #0f766e;
+          color: #0f766e;
         }
 
         /* Layout grids and wrappers */
@@ -402,13 +402,13 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           height: 44px;
           border-radius: 6px;
           background-color: #f1f5f9;
-          color: #2563eb;
+          color: #0d9488;
           margin-bottom: 18px;
           transition: all 0.3s ease;
         }
         .zoho-feature-card:hover .zoho-feature-icon {
-          background-color: #eff6ff;
-          color: #1f57e7;
+          background-color: #f0fdfa;
+          color: #0f766e;
           transform: scale(1.05);
         }
         
@@ -446,7 +446,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         }
         .zoho-flowchart-node:hover {
           transform: translateY(-4px);
-          border-color: #1f57e7;
+          border-color: #0f766e;
           box-shadow: 0 12px 20px rgba(31, 87, 231, 0.08);
         }
         
@@ -454,15 +454,15 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           width: 40px;
           height: 40px;
           border-radius: 50%;
-          background-color: #eff6ff;
-          color: #1f57e7;
+          background-color: #f0fdfa;
+          color: #0f766e;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.3s ease;
         }
         .zoho-flowchart-node:hover .zoho-flowchart-icon-wrapper {
-          background-color: #1f57e7;
+          background-color: #0f766e;
           color: #ffffff;
           transform: rotate(5deg) scale(1.05);
         }
@@ -552,28 +552,28 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           color: #0c1427;
         }
         .zoho-showcase-tab.active {
-          background-color: #2563eb;
+          background-color: #0d9488;
           color: #ffffff;
-          border-color: #2563eb;
+          border-color: #0d9488;
         }
         
         /* Voice Campaigns Highlight Section layout */
         .zoho-highlight-section {
           background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
-          border-top: 1px solid #dbeafe;
-          border-bottom: 1px solid #dbeafe;
+          border-top: 1px solid #ccfbf1;
+          border-bottom: 1px solid #ccfbf1;
         }
         
         .zoho-featured-badge {
           display: inline-block;
-          background-color: #eff6ff;
-          color: #1f57e7;
+          background-color: #f0fdfa;
+          color: #0f766e;
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
           padding: 4px 12px;
           border-radius: 20px;
-          border: 1px solid #bfdbfe;
+          border: 1px solid #99f6e4;
           margin-bottom: 16px;
           letter-spacing: 0.05em;
         }
@@ -606,7 +606,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         }
         .zoho-voice-step:hover {
           transform: translateY(-4px);
-          border-color: #1f57e7;
+          border-color: #0f766e;
           box-shadow: 0 10px 20px rgba(31, 87, 231, 0.08);
         }
         
@@ -665,7 +665,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         }
         
         .zoho-dark-btn-red {
-          background-color: #e31a22;
+          background-color: #0d9488;
           color: #ffffff;
           font-weight: 700;
           font-size: 13.5px;
@@ -679,13 +679,13 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           text-transform: uppercase;
         }
         .zoho-dark-btn-red:hover {
-          background-color: #c51218;
+          background-color: #0f766e;
         }
         
         .zoho-dark-btn-blue-outline {
           background-color: transparent;
-          color: #0091ff;
-          border: 1px solid #0091ff;
+          color: #0d9488;
+          border: 1px solid #0d9488;
           border-radius: 4px;
           font-weight: 700;
           font-size: 13.5px;
@@ -698,9 +698,9 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           text-transform: uppercase;
         }
         .zoho-dark-btn-blue-outline:hover {
-          background-color: rgba(0, 145, 255, 0.06);
-          color: #33a6ff;
-          border-color: #33a6ff;
+          background-color: rgba(13, 148, 136, 0.06);
+          color: #0f766e;
+          border-color: #0f766e;
         }
         @media (max-width: 640px) {
           .zoho-dark-btn-red, .zoho-dark-btn-blue-outline {
@@ -750,7 +750,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           cursor: pointer;
         }
         .zoho-footer-link:hover {
-          color: #e31a22;
+          color: #0d9488;
         }
         @media (max-width: 1024px) {
           .xenia-inside-grid {
@@ -850,7 +850,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
               <div className="zoho-browser-body">
                 <div className="zoho-browser-sidebar">
                   <div style={{ width: '28px', height: '28px', borderRadius: '5px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrendingUp size={14} color="#64748b" /></div>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '5px', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={14} color="#2563eb" /></div>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '5px', backgroundColor: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={14} color="#0d9488" /></div>
                   <div style={{ width: '28px', height: '28px', borderRadius: '5px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Tag size={14} color="#64748b" /></div>
                   <div style={{ width: '28px', height: '28px', borderRadius: '5px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Phone size={14} color="#64748b" /></div>
                 </div>
@@ -866,7 +866,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
                     </div>
                     <div style={{ padding: '12px', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
                       <div style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Reactivation Rate</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, marginTop: '2px', color: '#2563eb' }}>28.4%</div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, marginTop: '2px', color: '#0d9488' }}>28.4%</div>
                     </div>
                   </div>
                   <div style={{ padding: '12px', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
@@ -894,27 +894,27 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         <h2 className="zoho-h2">What Happens Inside Xenia?</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px', marginTop: '30px' }} className="xenia-inside-grid">
           <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>01</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0d9488', marginBottom: '8px' }}>01</div>
             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Discover</h3>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Find customer groups that need attention.</p>
           </div>
           <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>02</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0d9488', marginBottom: '8px' }}>02</div>
             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Plan</h3>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Build targeted campaigns around business goals.</p>
           </div>
           <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>03</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0d9488', marginBottom: '8px' }}>03</div>
             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Review</h3>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Validate audiences, content, and promotions.</p>
           </div>
           <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>04</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0d9488', marginBottom: '8px' }}>04</div>
             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Launch</h3>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Reach shoppers across multiple channels.</p>
           </div>
           <div className="zoho-feature-card" style={{ padding: '24px 20px', minHeight: '140px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#e31a22', marginBottom: '8px' }}>05</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0d9488', marginBottom: '8px' }}>05</div>
             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Measure</h3>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.45' }}>Track engagement, purchases, and outcomes.</p>
           </div>
@@ -1002,12 +1002,12 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           
           <div className="zoho-flowchart-arrow horizontal">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
           <div className="zoho-flowchart-arrow vertical">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
 
@@ -1026,12 +1026,12 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           
           <div className="zoho-flowchart-arrow horizontal">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
           <div className="zoho-flowchart-arrow vertical">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
 
@@ -1050,12 +1050,12 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           
           <div className="zoho-flowchart-arrow horizontal">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
           <div className="zoho-flowchart-arrow vertical">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
 
@@ -1074,12 +1074,12 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           
           <div className="zoho-flowchart-arrow horizontal">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
           <div className="zoho-flowchart-arrow vertical">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
 
@@ -1098,12 +1098,12 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           
           <div className="zoho-flowchart-arrow horizontal">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
           <div className="zoho-flowchart-arrow vertical">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
 
@@ -1122,12 +1122,12 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           
           <div className="zoho-flowchart-arrow horizontal">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
           <div className="zoho-flowchart-arrow vertical">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#1f57e7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="zoho-arrow-path" />
             </svg>
           </div>
 
@@ -1327,31 +1327,31 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
         
         <div className="zoho-voice-workflow">
           <div className="zoho-voice-step">
-            <div style={{ padding: '8px', backgroundColor: '#eff6ff', borderRadius: '5px' }}><Users size={18} color="#2563eb" /></div>
+            <div style={{ padding: '8px', backgroundColor: '#f0fdfa', borderRadius: '5px' }}><Users size={18} color="#0d9488" /></div>
             <strong style={{ fontSize: '14px', color: '#0f172a' }}>1. Target Cohorts</strong>
             <span style={{ fontSize: '12px', color: '#64748b' }}>Champion / Lost Champions</span>
           </div>
           
           <div className="zoho-voice-step">
-            <div style={{ padding: '8px', backgroundColor: '#eff6ff', borderRadius: '5px' }}><FileText size={18} color="#2563eb" /></div>
+            <div style={{ padding: '8px', backgroundColor: '#f0fdfa', borderRadius: '5px' }}><FileText size={18} color="#0d9488" /></div>
             <strong style={{ fontSize: '14px', color: '#0f172a' }}>2. Script Draft</strong>
             <span style={{ fontSize: '12px', color: '#64748b' }}>Tamil / Hindi native scripts</span>
           </div>
           
           <div className="zoho-voice-step">
-            <div style={{ padding: '8px', backgroundColor: '#eff6ff', borderRadius: '5px' }}><Volume2 size={18} color="#2563eb" /></div>
+            <div style={{ padding: '8px', backgroundColor: '#f0fdfa', borderRadius: '5px' }}><Volume2 size={18} color="#0d9488" /></div>
             <strong style={{ fontSize: '14px', color: '#0f172a' }}>3. Voice Preview</strong>
             <span style={{ fontSize: '12px', color: '#64748b' }}>Test speech pace and tone</span>
           </div>
           
           <div className="zoho-voice-step">
-            <div style={{ padding: '8px', backgroundColor: '#eff6ff', borderRadius: '5px' }}><Play size={18} color="#2563eb" /></div>
+            <div style={{ padding: '8px', backgroundColor: '#f0fdfa', borderRadius: '5px' }}><Play size={18} color="#0d9488" /></div>
             <strong style={{ fontSize: '14px', color: '#0f172a' }}>4. Outbound Dial</strong>
             <span style={{ fontSize: '12px', color: '#64748b' }}>Simulate real connection logs</span>
           </div>
           
           <div className="zoho-voice-step">
-            <div style={{ padding: '8px', backgroundColor: '#eff6ff', borderRadius: '5px' }}><CheckCircle2 size={18} color="#2563eb" /></div>
+            <div style={{ padding: '8px', backgroundColor: '#f0fdfa', borderRadius: '5px' }}><CheckCircle2 size={18} color="#0d9488" /></div>
             <strong style={{ fontSize: '14px', color: '#0f172a' }}>5. Tracking</strong>
             <span style={{ fontSize: '12px', color: '#64748b' }}>Call lifecycle funnel log</span>
           </div>

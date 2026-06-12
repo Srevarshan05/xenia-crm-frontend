@@ -9,10 +9,10 @@
   --text-secondary: #6B7280;    /* Muted Slate Text */
   --text-muted: #9CA3AF;        /* Muted Gray Text */
   
-  --color-accent: #e31a22;      /* Zoho Campaigns Primary Brand Red */
-  --color-accent-hover: #c51218;  /* Red Brand Hover */
-  --color-accent-light: #fef2f2;  /* Red Brand Light background */
-  --color-accent-border: #fca5a5; /* Red Brand Light border */
+  --color-accent: #0d9488;      /* Vibrant Teal (Modern & Trustworthy) */
+  --color-accent-hover: #0f766e;  /* Teal Hover */
+  --color-accent-light: #f0fdfa;  /* Teal Light background */
+  --color-accent-border: #99f6e4; /* Teal Light border */
   
   --color-success: #16A34A;     /* Green Alert */
   --color-success-bg: #F0FDF4;
