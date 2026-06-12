@@ -5889,15 +5889,15 @@ export default function App() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {[
-                      { label: 'Opening Greeting', value: scriptData.script.opening, icon: <Volume2 size={16} color="var(--color-accent)" />, color: 'var(--color-accent)' },
-                      { label: 'Main Value Offer', value: scriptData.script.main_offer, icon: <Gift size={16} color="#059669" />, color: '#059669' },
-                      { label: 'Call-to-Action', value: scriptData.script.cta, icon: <Megaphone size={16} color="#d97706" />, color: '#d97706' },
-                      { label: 'Closing Signature', value: scriptData.script.closing, icon: <Handshake size={16} color="#7c3aed" />, color: '#7c3aed' },
+                      { label: 'Opening Greeting', value: scriptData.script.opening, icon: <Volume2 size={16} color="var(--text-secondary)" /> },
+                      { label: 'Main Value Offer', value: scriptData.script.main_offer, icon: <Gift size={16} color="var(--text-secondary)" /> },
+                      { label: 'Call-to-Action', value: scriptData.script.cta, icon: <Megaphone size={16} color="var(--text-secondary)" /> },
+                      { label: 'Closing Signature', value: scriptData.script.closing, icon: <Handshake size={16} color="var(--text-secondary)" /> },
                     ].map(section => (
-                      <div key={section.label} style={{ display: 'flex', gap: '14px', padding: '14px 16px', background: '#fafafa', borderRadius: '6px', border: '1px solid var(--border-color)', borderLeft: `4px solid ${section.color}` }}>
+                      <div key={section.label} style={{ display: 'flex', gap: '14px', padding: '14px 16px', background: '#ffffff', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
                         <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{section.icon}</span>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: section.color, marginBottom: '4px' }}>{section.label}</div>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>{section.label}</div>
                           <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.6' }}>{section.value}</div>
                         </div>
                       </div>
