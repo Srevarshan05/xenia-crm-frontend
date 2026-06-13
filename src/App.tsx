@@ -23,6 +23,9 @@ import type {
 import { 
   LayoutDashboard, 
   Flame, 
+  Upload,
+  Download,
+  FileSpreadsheet,
   Send, 
   Users, 
   BarChart2, 
@@ -1130,10 +1133,10 @@ export default function App() {
 
     // Grouping list for sub-tabs
     const prepareOpps = opportunities;
-    const reviewCamps = campaignsList.filter(c => c.status === 'reviewed');
-    const queueCamps = campaignsList.filter(c => c.status === 'awaiting approval');
-    const activeCamps = campaignsList.filter(c => c.status === 'approved' || c.status === 'launched');
-    const historyCamps = campaignsList.filter(c => c.status === 'completed');
+    const reviewCamps = campaignsList.filter(c => c.status === 'reviewed' && c.channel !== 'Voice' && c.channel !== 'Voice Call');
+    const queueCamps = campaignsList.filter(c => c.status === 'awaiting approval' && c.channel !== 'Voice' && c.channel !== 'Voice Call');
+    const activeCamps = campaignsList.filter(c => (c.status === 'approved' || c.status === 'launched') && c.channel !== 'Voice' && c.channel !== 'Voice Call');
+    const historyCamps = campaignsList.filter(c => c.status === 'completed' && c.channel !== 'Voice' && c.channel !== 'Voice Call');
 
     return (
       <div className="fade-in">
@@ -2761,7 +2764,18 @@ export default function App() {
                           <h2 style={{ fontSize: '16px', fontWeight: 700 }}>{selectedCamp.name}</h2>
                           <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>Objective: {selectedCamp.objective}</div>
                         </div>
-                        <span className="badge badge-neutral" style={{ padding: '4px 10px', fontSize: '11px' }}>Completed Report</span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span className="badge badge-neutral" style={{ padding: '4px 10px', fontSize: '11px' }}>Completed Report</span>
+                          <a 
+                            href={api.getCampaignReportUrl(selectedCamp.campaign_id)} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="btn btn-secondary"
+                            style={{ padding: '4px 10px', fontSize: '11.5px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Download size={13} /> Export PDF Report
+                          </a>
+                        </div>
                       </div>
                     </div>
 
@@ -3899,6 +3913,13 @@ export default function App() {
     const [segments, setSegments] = useState<CustomerSegment[]>([]);
     const [story, setStory] = useState<ShopperStory | null>(null);
     
+    // CSV Import State
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+    const [importError, setImportError] = useState<string | null>(null);
+    
     // Filters & Pagination State
     const [searchText, setSearchText] = useState('');
     const [cityFilter, setCityFilter] = useState('');
@@ -3948,7 +3969,7 @@ export default function App() {
       <div className="fade-in">
         {/* Filters Toolbar Row */}
         <div className="card" style={{ padding: '12px', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <Search size={14} className="text-muted" style={{ position: 'absolute', left: '10px', top: '10px' }} />
               <input 
@@ -3977,6 +3998,18 @@ export default function App() {
                 <option value="Kolkata">Kolkata</option>
               </select>
             </div>
+            <button
+              className="btn btn-primary"
+              style={{ height: '32px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', padding: '0 14px' }}
+              onClick={() => {
+                setIsImportModalOpen(true);
+                setImportFile(null);
+                setImportResult(null);
+                setImportError(null);
+              }}
+            >
+              <Upload size={13} /> Import CSV
+            </button>
           </div>
         </div>
 
@@ -4328,6 +4361,168 @@ export default function App() {
                 ) : (
                   <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>Could not load shopper story.</div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CSV IMPORT MODAL */}
+        {isImportModalOpen && (
+          <div className="drawer-backdrop" onClick={() => setIsImportModalOpen(false)}>
+            <div className="drawer-container" style={{ width: '40%', minWidth: '450px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileSpreadsheet size={20} color="var(--color-accent)" />
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>Import Shoppers via CSV</h3>
+                </div>
+                <button 
+                  onClick={() => setIsImportModalOpen(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <X size={16} className="text-muted" />
+                </button>
+              </div>
+
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5' }}>
+                Onboard shopper accounts directly into the Xenia CRM database. Download our template to ensure headers match.
+              </div>
+
+              {/* Sample Template Download */}
+              <div style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-border)', borderRadius: '6px', padding: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileText size={16} color="var(--color-accent)" />
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Need a helper template?</span>
+                </div>
+                <a 
+                  href={api.getSampleCSVUrl()} 
+                  className="btn btn-secondary" 
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px', textDecoration: 'none' }}
+                  download
+                >
+                  <Download size={12} /> Download Template
+                </a>
+              </div>
+
+              {/* File Input Selection Area */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Select CSV File</label>
+                <div style={{
+                  border: '2px dashed var(--border-color)',
+                  borderRadius: '6px',
+                  padding: '24px 16px',
+                  textAlign: 'center',
+                  background: '#fafafa',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={e => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setImportFile(e.target.files[0]);
+                        setImportResult(null);
+                        setImportError(null);
+                      }
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <Upload size={24} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {importFile ? importFile.name : 'Click or drag CSV file to upload'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    {importFile ? `${(importFile.size / 1024).toFixed(1)} KB` : 'Maximum file size: 10MB'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Columns and Formatting Rules */}
+              <div className="card" style={{ padding: '12px', margin: '0 0 16px 0', fontSize: '11px', background: 'var(--bg-surface)' }}>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', textTransform: 'uppercase', fontSize: '9.5px', letterSpacing: '0.04em' }}>CSV Column Guidelines</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', color: 'var(--text-secondary)' }}>
+                  <div>• <strong>name</strong>, <strong>email</strong>: <span style={{ color: 'var(--color-danger)' }}>Required</span>. Email must be unique.</div>
+                  <div>• <strong>customer_id</strong>: Optional UUID. If omitted, Xenia auto-generates one.</div>
+                  <div>• <strong>segment</strong>: Optional (e.g. <code>Champion</code>, <code>At-Risk</code>).</div>
+                  <div>• <strong>total_spend</strong>: Optional number (positive). Computes customer monetary tier.</div>
+                  <div>• <strong>last_purchase_date</strong>: Optional (e.g. <code>YYYY-MM-DD</code>). Computes recency score.</div>
+                </div>
+              </div>
+
+              {/* Import status or errors display */}
+              {importing && (
+                <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12.5px', marginBottom: '16px' }}>
+                  <RefreshCw className="spin" size={16} style={{ marginRight: '6px', display: 'inline' }} />
+                  Uploading and validating shopper database records...
+                </div>
+              )}
+
+              {importError && (
+                <div style={{ background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', borderRadius: '6px', padding: '10px 12px', color: 'var(--color-danger)', fontSize: '12px', marginBottom: '16px' }}>
+                  {importError}
+                </div>
+              )}
+
+              {importResult && (
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '9px', color: '#16a34a', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Imported Shoppers</span>
+                      <strong style={{ fontSize: '18px', color: '#15803d' }}>{importResult.imported}</strong>
+                    </div>
+                    <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '8px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '9px', color: '#ea580c', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Rows Skipped</span>
+                      <strong style={{ fontSize: '18px', color: '#c2410c' }}>{importResult.skipped}</strong>
+                    </div>
+                  </div>
+
+                  {importResult.errors && importResult.errors.length > 0 && (
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', background: '#fff', padding: '10px' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>SKIPPED ROWS DETAIL LOG</div>
+                      <div style={{ maxHeight: '100px', overflowY: 'auto', fontSize: '11px', fontFamily: 'var(--mono)', lineHeight: '1.4' }}>
+                        {importResult.errors.map((err, idx) => (
+                          <div key={idx} style={{ marginBottom: '3px', color: err.includes('database') || err.includes('exists') ? '#b45309' : '#b91c1c' }}>
+                            ⚠ {err}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Footer Actions */}
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
+                <button className="btn btn-secondary" onClick={() => setIsImportModalOpen(false)} disabled={importing}>Close</button>
+                <button 
+                  className="btn btn-accent" 
+                  disabled={!importFile || importing}
+                  onClick={async () => {
+                    if (!importFile) return;
+                    setImporting(true);
+                    setImportResult(null);
+                    setImportError(null);
+                    try {
+                      const res = await api.importShoppersCSV(importFile);
+                      setImportResult(res);
+                      loadCustomersList();
+                    } catch (err: any) {
+                      setImportError(err.message || "Failed to parse or import CSV data");
+                    } finally {
+                      setImporting(false);
+                    }
+                  }}
+                >
+                  Start Import
+                </button>
               </div>
             </div>
           </div>

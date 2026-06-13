@@ -63,6 +63,7 @@ export interface Opportunity {
   created_at: string;
   recommended_channel?: string | null;
   recommended_promotion_code?: string | null;
+  ai_context?: any | null;
 }
 
 export interface Promotion {
@@ -106,6 +107,8 @@ export interface Campaign {
   created_at: string;
   launched_at: string | null;
   completed_at: string | null;
+  opportunity_id?: string | null;
+  ai_strategy?: any | null;
   
   promotion?: Promotion | null;
   simulation?: CampaignSimulation | null;
@@ -683,6 +686,54 @@ export const api = {
     });
     if (!res.ok) throw new Error("Failed to update API keys");
     return res.json();
+  },
+
+  // ── CSV Import ─────────────────────────────────────────────────────────────
+  importShoppersCSV: async (file: File): Promise<{ imported: number; skipped: number; errors: string[] }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE_URL}/api/customers/import`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Failed to import shoppers CSV");
+    }
+    return res.json();
+  },
+
+  getSampleCSVUrl: (): string => {
+    return `${API_BASE_URL}/api/customers/sample-csv`;
+  },
+
+  // ── Voice History & Saving ──────────────────────────────────────────────────
+  listVoiceCampaignHistory: async (): Promise<any[]> => {
+    const res = await fetch(`${API_BASE_URL}/api/voice/history`);
+    if (!res.ok) throw new Error("Failed to load voice campaign history");
+    return res.json();
+  },
+
+  saveVoiceCampaign: async (payload: any): Promise<any> => {
+    const res = await fetch(`${API_BASE_URL}/api/voice/campaigns`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Failed to save voice campaign");
+    }
+    return res.json();
+  },
+
+  // ── PDF Exports ─────────────────────────────────────────────────────────────
+  getCampaignReportUrl: (campaignId: string): string => {
+    return `${API_BASE_URL}/api/campaigns/${campaignId}/report`;
+  },
+
+  getVoiceReportUrl: (campaignId: string): string => {
+    return `${API_BASE_URL}/api/voice/campaigns/${campaignId}/report`;
   },
 };
 
