@@ -76,7 +76,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
       const script = document.createElement("script");
       script.src = "https://www.chatbase.co/embed.min.js";
       script.id = "nSFGl9WWd7gsbPpyUhO-3";
-      script.domain = "www.chatbase.co";
+      script.setAttribute("domain", "www.chatbase.co");
       document.body.appendChild(script);
       win.chatbaseScriptElement = script;
     };
