@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8000" : "";
 
 // Session-level cache for prepare-context — avoids refetching same opportunity within a session
 const _prepareContextCache = new Map<string, any>();
