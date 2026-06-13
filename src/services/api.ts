@@ -1,4 +1,7 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+// Session-level cache for prepare-context — avoids refetching same opportunity within a session
+const _prepareContextCache = new Map<string, any>();
 
 export interface Customer {
   customer_id: string;
@@ -498,9 +501,15 @@ export const api = {
 
   // Planner
   getPrepareContext: async (opportunityId: string): Promise<PrepareContextResponse> => {
+    // Return cached result instantly if already fetched this session
+    const cached = _prepareContextCache.get(opportunityId);
+    if (cached) return Promise.resolve(cached);
+
     const res = await fetch(`${API_BASE_URL}/api/planner/prepare-context?opportunity_id=${opportunityId}`);
     if (!res.ok) throw new Error("Failed to load prepare context");
-    return res.json();
+    const data = await res.json();
+    _prepareContextCache.set(opportunityId, data);
+    return data;
   },
 
   generateCampaignProposal: async (goal: string): Promise<GoalPlannerResponse> => {

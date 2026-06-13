@@ -813,3 +813,8 @@ p {
   100% { transform: translate(0,0); }
 }
 
+/* Compact layout for tracking attribution log tables */
+.tracking-table th,
+.tracking-table td {
+  padding: 8px 10px !important;
+}

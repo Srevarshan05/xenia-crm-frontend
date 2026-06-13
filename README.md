@@ -54,3 +54,18 @@ To bundle the static assets:
 npm run build
 ```
 The production-ready assets will be generated in the `/dist` directory.
+
+## 🌐 Deployment to Vercel
+
+This frontend can be deployed easily on Vercel:
+
+1. **Vercel Project Setup**:
+   - Create a new project on Vercel and import this repository.
+   - Set the root directory of the project to `frontend/` (if deploying from a monorepo).
+   
+2. **Environment Variables**:
+   - Set the following environment variable in the Vercel Dashboard:
+     - `VITE_API_BASE_URL` = `http://xenia-backend-env.eba-kv2rdare.ap-south-1.elasticbeanstalk.com`
+
+3. **Deploy**:
+   - Vercel will automatically detect Vite, install dependencies, read `.env.production`, and build the application.

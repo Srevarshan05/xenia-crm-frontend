@@ -1117,11 +1117,8 @@ export default function App() {
         ]);
         setShopperMetrics(metrics);
         
-        const res = await fetch(`http://localhost:8000/api/customers/${rec.customer.customer_id}/segments`);
-        if (res.ok) {
-          const segs = await res.json();
-          setShopperSegments(segs.map((s: any) => s.segment_name));
-        }
+        const segs = await api.getCustomerSegments(rec.customer.customer_id);
+        setShopperSegments(segs.map((s: any) => s.segment_name));
       } catch (err) {
         console.error("Failed to load shopper snapshot details", err);
       } finally {
@@ -1648,7 +1645,7 @@ export default function App() {
         {campaignSubTab === 'review' && (
           <div className="split-pane">
             {/* Left — list of reviewed campaigns from DB */}
-            <div className="split-left" style={{ flex: '0 0 30%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="split-left" style={{ flex: '0 0 250px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>
                 Campaigns Pending Review
               </div>
@@ -2334,7 +2331,7 @@ export default function App() {
         {/* 3. APPROVAL QUEUE TAB */}
         {campaignSubTab === 'queue' && (
           <div className="split-pane">
-            <div className="split-left" style={{ flex: '0 0 30%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="split-left" style={{ flex: '0 0 250px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Awaiting Sign-off</div>
               {queueCamps.map(camp => (
                 <div 
@@ -2441,51 +2438,54 @@ export default function App() {
 
         {/* 4. ACTIVE CAMPAIGNS TAB & 5. CAMPAIGN HISTORY TAB */}
         {(campaignSubTab === 'active' || campaignSubTab === 'history') && (
-          <div className="split-pane">
-            {/* Left list history directory */}
-            <div className="split-left" style={{ flex: '0 0 30%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: 'calc(100vh - var(--header-height) - 150px)', overflowY: 'auto' }}>
+            {/* Top horizontal campaigns list */}
+            <div className="card" style={{ margin: 0, padding: '12px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
                 {campaignSubTab === 'active' ? 'Running Campaigns' : 'Past Campaigns'}
               </div>
-              
-              {(() => {
-                const targetList = campaignSubTab === 'active' ? activeCamps : historyCamps;
-                return (
-                  <>
-                    {targetList.map(camp => (
-                      <div 
-                        key={camp.campaign_id}
-                        onClick={() => handleSelectCampaign(camp)}
-                        style={{
-                          backgroundColor: 'var(--bg-surface)',
-                          border: selectedCamp?.campaign_id === camp.campaign_id ? '1.5px solid var(--color-accent)' : '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          padding: '10px 12px',
-                          cursor: 'pointer',
-                          transition: 'all 0.1s ease'
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, fontSize: '12.5px' }}>{camp.name}</div>
-                        <div className="flex-between" style={{ marginTop: '6px', fontSize: '11.5px' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>{camp.channel}</span>
-                          <span className={`badge ${camp.status === 'launched' ? 'badge-success' : 'badge-neutral'}`}>
-                            {camp.status === 'launched' ? 'Running' : camp.status}
-                          </span>
+              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {(() => {
+                  const targetList = campaignSubTab === 'active' ? activeCamps : historyCamps;
+                  return (
+                    <>
+                      {targetList.map(camp => (
+                        <div 
+                          key={camp.campaign_id}
+                          onClick={() => handleSelectCampaign(camp)}
+                          style={{
+                            backgroundColor: 'var(--bg-surface)',
+                            border: selectedCamp?.campaign_id === camp.campaign_id ? '1.5px solid var(--color-accent)' : '1px solid var(--border-color)',
+                            borderRadius: '4px',
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.1s ease',
+                            flexShrink: 0,
+                            width: '240px'
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, fontSize: '12.5px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{camp.name}</div>
+                          <div className="flex-between" style={{ marginTop: '4px', fontSize: '11.5px' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>{camp.channel}</span>
+                            <span className={`badge ${camp.status === 'launched' ? 'badge-success' : 'badge-neutral'}`}>
+                              {camp.status === 'launched' ? 'Running' : camp.status}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    {targetList.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '12px' }}>
-                        No campaigns found in this view.
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                      ))}
+                      {targetList.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '10px', color: 'var(--text-muted)', fontSize: '12px', width: '100%' }}>
+                          No campaigns found in this view.
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
 
-            {/* Right details workspace */}
-            <div className="split-right">
+            {/* Bottom details workspace */}
+            <div style={{ width: '100%' }}>
               {selectedCamp && campaignSubTab === 'active' && (selectedCamp.status === 'launched' || selectedCamp.status === 'approved') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div className="card" style={{ margin: 0 }}>
@@ -2648,16 +2648,16 @@ export default function App() {
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>*Click row to inspect timeline drawer. Use buttons to simulate webhook callback events.</span>
                           </div>
                           {recipients.length > 0 ? (
-                            <div className="table-container" style={{ margin: 0 }}>
-                              <table className="enterprise-table">
+                            <div style={{ margin: 0, overflowX: 'auto', width: '100%' }}>
+                              <table className="enterprise-table tracking-table" style={{ tableLayout: 'fixed', width: '100%', minWidth: '850px' }}>
                                 <thead>
                                   <tr>
-                                    <th>Shopper</th>
-                                    <th>Location</th>
-                                    <th>Status Pipeline</th>
+                                    <th style={{ width: '140px' }}>Shopper</th>
+                                    <th style={{ width: '100px' }}>Location</th>
+                                    <th style={{ width: '220px' }}>Status Pipeline</th>
                                     <th>Selection Reason</th>
-                                    <th className="mono-align">Attributed Order</th>
-                                    <th style={{ width: '360px' }}>Action Simulation</th>
+                                    <th style={{ width: '130px', textAlign: 'left' }}>Attributed Order</th>
+                                    <th style={{ width: '200px' }}>Action Simulation</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2665,7 +2665,7 @@ export default function App() {
                                     <tr key={log.communication_id} style={{ cursor: 'pointer' }} onClick={() => handleOpenRecipientTimeline(log)}>
                                       <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>{log.customer.name}</td>
                                       <td>{log.customer.city}</td>
-                                      <td>
+                                      <td style={{ width: '220px', minWidth: '220px', maxWidth: '220px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                                         {renderStatusPipeline(log.status)}
                                       </td>
                                       <td>
@@ -2673,7 +2673,7 @@ export default function App() {
                                           {getSelectionReason(log.customer, selectedCamp?.target_segment || '')}
                                         </span>
                                       </td>
-                                      <td className="mono-align" style={{ fontWeight: 700, color: 'var(--color-success)' }} onClick={e => e.stopPropagation()}>
+                                      <td style={{ fontFamily: 'var(--mono)', fontSize: '13px', fontWeight: 700, color: 'var(--color-success)', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
                                         {log.attributed_order ? `INR ${log.attributed_order.total_amount.toLocaleString('en-IN')}` : '-'}
                                       </td>
                                       <td onClick={e => e.stopPropagation()}>
@@ -2963,15 +2963,15 @@ export default function App() {
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>*Click row to inspect timeline and shopper snapshot drawer.</span>
                           </div>
                           {recipients.length > 0 ? (
-                            <div className="table-container" style={{ margin: 0 }}>
-                              <table className="enterprise-table">
+                            <div style={{ margin: 0, overflowX: 'auto', width: '100%' }}>
+                              <table className="enterprise-table tracking-table" style={{ tableLayout: 'fixed', width: '100%', minWidth: '700px' }}>
                                 <thead>
                                   <tr>
-                                    <th>Shopper</th>
-                                    <th>Location</th>
-                                    <th>Status Pipeline</th>
+                                    <th style={{ width: '140px' }}>Shopper</th>
+                                    <th style={{ width: '100px' }}>Location</th>
+                                    <th style={{ width: '220px' }}>Status Pipeline</th>
                                     <th>Selection Reason</th>
-                                    <th className="mono-align">Attributed Order</th>
+                                    <th style={{ width: '130px', textAlign: 'left' }}>Attributed Order</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2979,7 +2979,7 @@ export default function App() {
                                     <tr key={log.communication_id} style={{ cursor: 'pointer' }} onClick={() => handleOpenRecipientTimeline(log)}>
                                       <td style={{ fontWeight: 600, color: 'var(--color-accent)' }}>{log.customer.name}</td>
                                       <td>{log.customer.city}</td>
-                                      <td>
+                                      <td style={{ width: '220px', minWidth: '220px', maxWidth: '220px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                                         {renderStatusPipeline(log.status)}
                                       </td>
                                       <td>
@@ -2987,7 +2987,7 @@ export default function App() {
                                           {getSelectionReason(log.customer, selectedCamp?.target_segment || '')}
                                         </span>
                                       </td>
-                                      <td className="mono-align" style={{ fontWeight: 700, color: 'var(--color-success)' }}>
+                                      <td style={{ fontFamily: 'var(--mono)', fontSize: '13px', fontWeight: 700, color: 'var(--color-success)', textAlign: 'left' }}>
                                         {log.attributed_order ? `INR ${log.attributed_order.total_amount.toLocaleString('en-IN')}` : '-'}
                                       </td>
                                     </tr>
