@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://xenia-backend-env.eba-kv2rdare.ap-south-1.elasticbeanstalk.com/api/:path*"
+      "destination": "http://Xenia-backend-v2-env.eba-mymksz3y.ap-south-1.elasticbeanstalk.com/api/:path*"
     }
   ]
 }
