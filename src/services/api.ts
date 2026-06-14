@@ -10,6 +10,8 @@ export interface Customer {
   phone: string;
   city: string;
   join_date: string;
+  total_spend?: number;
+  churn_probability?: number;
 }
 
 export interface CustomerMetrics {

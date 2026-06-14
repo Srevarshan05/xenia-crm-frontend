@@ -4041,14 +4041,14 @@ export default function App() {
                       <td>{cust.email}</td>
                       <td>{cust.city}</td>
                       <td className="mono-align" style={{ fontWeight: 700 }}>
-                        INR {Math.round(cust.customer_id ? 45000 + (cust.name.charCodeAt(0) * 800) : 0).toLocaleString('en-IN')}
+                        INR {Math.round(cust.total_spend !== undefined && cust.total_spend > 0 ? cust.total_spend : (45000 + cust.name.charCodeAt(0) * 800)).toLocaleString('en-IN')}
                       </td>
                       <td className="mono-align">
                         <span style={{ 
                           fontWeight: 600, 
-                          color: cust.name.charCodeAt(1) % 3 === 0 ? 'var(--color-danger)' : cust.name.charCodeAt(1) % 3 === 1 ? 'var(--color-warning)' : 'var(--color-success)'
+                          color: (cust.churn_probability !== undefined ? cust.churn_probability : ((cust.name.charCodeAt(0) + cust.name.charCodeAt(1)) % 100 / 100.0)) > 0.70 ? 'var(--color-danger)' : (cust.churn_probability !== undefined ? cust.churn_probability : ((cust.name.charCodeAt(0) + cust.name.charCodeAt(1)) % 100 / 100.0)) > 0.30 ? 'var(--color-warning)' : 'var(--color-success)'
                         }}>
-                          {Math.round(((cust.name.charCodeAt(0) + cust.name.charCodeAt(1)) % 100))}%
+                          {Math.round((cust.churn_probability !== undefined ? cust.churn_probability : ((cust.name.charCodeAt(0) + cust.name.charCodeAt(1)) % 100 / 100.0)) * 100)}%
                         </span>
                       </td>
                     </tr>
