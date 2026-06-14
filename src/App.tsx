@@ -23,6 +23,7 @@ import type {
 import { 
   LayoutDashboard, 
   Flame, 
+  Brain, 
   Upload,
   Download,
   FileSpreadsheet,
@@ -2286,6 +2287,58 @@ export default function App() {
                             Calculated using expected reach, conversion rate, and average segment shopper order value (INR 1,245) with the applied promotion incentive.
                           </p>
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Xenia AI Strategic Rationale Explainability */}
+                  {selectedCamp.ai_strategy && selectedCamp.ai_strategy.ai_explanation && (
+                    <div className="card" style={{ margin: 0, border: '1.5px solid var(--color-accent-light)', backgroundColor: '#F0FDFA' }}>
+                      <div className="card-title" style={{ color: 'var(--color-accent)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1px solid var(--color-accent-light)', paddingBottom: '6px' }}>
+                        <Brain size={16} />
+                        <span style={{ fontWeight: 800 }}>Xenia AI Strategic Rationale</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {typeof selectedCamp.ai_strategy.ai_explanation === 'string' ? (
+                          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                            {selectedCamp.ai_strategy.ai_explanation}
+                          </p>
+                        ) : (
+                          <>
+                            {selectedCamp.ai_strategy.ai_explanation.why_audience && (
+                              <div>
+                                <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.04em' }}>Why This Audience? (Customer Metrics Basis)</span>
+                                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.5 }}>
+                                  {selectedCamp.ai_strategy.ai_explanation.why_audience}
+                                </p>
+                              </div>
+                            )}
+                            {selectedCamp.ai_strategy.ai_explanation.why_now && (
+                              <div>
+                                <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.04em' }}>Why Now? (Timing & Inactivity Window)</span>
+                                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.5 }}>
+                                  {selectedCamp.ai_strategy.ai_explanation.why_now}
+                                </p>
+                              </div>
+                            )}
+                            {selectedCamp.ai_strategy.ai_explanation.why_channel && (
+                              <div>
+                                <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.04em' }}>Why This Channel? (Response Probability)</span>
+                                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.5 }}>
+                                  {selectedCamp.ai_strategy.ai_explanation.why_channel}
+                                </p>
+                              </div>
+                            )}
+                            {selectedCamp.ai_strategy.ai_explanation.why_promotion && (
+                              <div>
+                                <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.04em' }}>Why This Promotion? (Incentive & ROI Rationale)</span>
+                                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.5 }}>
+                                  {selectedCamp.ai_strategy.ai_explanation.why_promotion}
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
