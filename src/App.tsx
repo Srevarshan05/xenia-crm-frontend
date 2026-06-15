@@ -749,10 +749,45 @@ export default function App() {
     
     const [goalInput, setGoalInput] = useState(prefilledGoal || '');
     const [proposal, setProposal] = useState<GoalPlannerResponse | null>(null);
-    
+
     const [planning, setPlanning] = useState(false);
     const [dispatching, setDispatching] = useState(false);
     const [simulatingEvent, setSimulatingEvent] = useState(false);
+
+    const proceedReviewRef = useRef<HTMLDivElement | null>(null);
+    const [draftingStep, setDraftingStep] = useState(0);
+
+    const draftingMessages = [
+      "Analysing customer data...",
+      "Passing metrics to Gen AI...",
+      "LLM inferencing...",
+      "Script generating...",
+      "About to finish..."
+    ];
+
+    useEffect(() => {
+      let interval: any;
+      if (planning) {
+        setDraftingStep(0);
+        interval = setInterval(() => {
+          setDraftingStep(prev => (prev < draftingMessages.length - 1 ? prev + 1 : prev));
+        }, 2500);
+      } else {
+        setDraftingStep(0);
+      }
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [planning]);
+
+    useEffect(() => {
+      if (proposal) {
+        const timer = setTimeout(() => {
+          proceedReviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 150);
+        return () => clearTimeout(timer);
+      }
+    }, [proposal]);
     
     const [loading, setLoading] = useState(true);
     const [detailsLoading, setDetailsLoading] = useState(false);
@@ -783,7 +818,47 @@ export default function App() {
       loadInitialData();
     }, [campaignSubTab]);
 
-    async function loadInitialData() {
+    async function loadInitialData(force = false) {
+      if (campaignsList.length > 0 && opportunities.length > 0 && !force) {
+        // Handle default campaign selection based on tab mode using existing state
+        let filteredCamps: Campaign[] = [];
+        if (campaignSubTab === 'queue') {
+          filteredCamps = campaignsList.filter(c => c.status === 'draft' || c.status === 'reviewed' || c.status === 'awaiting approval');
+        } else if (campaignSubTab === 'active') {
+          filteredCamps = campaignsList.filter(c => c.status === 'approved' || c.status === 'launched');
+        } else if (campaignSubTab === 'history') {
+          filteredCamps = campaignsList.filter(c => c.status === 'completed');
+        }
+
+        // Restore selected campaign if selectedCampaignId is set, otherwise auto-select for active/history tabs
+        if (selectedCampaignId) {
+          const match = campaignsList.find(c => c.campaign_id === selectedCampaignId);
+          if (match) {
+            handleSelectCampaign(match);
+          } else if ((campaignSubTab === 'active' || campaignSubTab === 'history') && filteredCamps.length > 0) {
+            handleSelectCampaign(filteredCamps[0]);
+          } else {
+            setSelectedCamp(null);
+          }
+        } else if ((campaignSubTab === 'active' || campaignSubTab === 'history') && filteredCamps.length > 0) {
+          handleSelectCampaign(filteredCamps[0]);
+        } else {
+          setSelectedCamp(null);
+        }
+
+        const openOpps = opportunities.filter(o => o.status === 'open');
+        if (openOpps.length > 0 && !selectedOpp) {
+          // Just set the selected opp display state - no API call
+          setSelectedOpp(openOpps[0]);
+          // Pre-fill the goal text from the opportunity description
+          const opp = openOpps[0];
+          const city = opp.segment_filter?.city || '';
+          const category = opp.segment_filter?.category || '';
+          const goalStr = `Address ${(opp.type || '').replace('_', ' ')} opportunity in ${city || 'any city'} for category ${category || 'any category'}. Description: ${opp.description}`;
+          setGoalInput(goalStr);
+        }
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
@@ -805,24 +880,19 @@ export default function App() {
           filteredCamps = camps.filter(c => c.status === 'completed');
         }
 
-        // Only auto-select + load campaign details when on active/history tabs (not prepare/review/queue)
-        if (campaignSubTab === 'active' || campaignSubTab === 'history') {
-          if (selectedCampaignId) {
-            const match = camps.find(c => c.campaign_id === selectedCampaignId);
-            if (match) {
-              handleSelectCampaign(match);
-            } else if (filteredCamps.length > 0) {
-              handleSelectCampaign(filteredCamps[0]);
-            } else {
-              setSelectedCamp(null);
-            }
-          } else if (filteredCamps.length > 0) {
+        // Restore selected campaign if selectedCampaignId is set, otherwise auto-select for active/history tabs
+        if (selectedCampaignId) {
+          const match = camps.find(c => c.campaign_id === selectedCampaignId);
+          if (match) {
+            handleSelectCampaign(match);
+          } else if ((campaignSubTab === 'active' || campaignSubTab === 'history') && filteredCamps.length > 0) {
             handleSelectCampaign(filteredCamps[0]);
           } else {
             setSelectedCamp(null);
           }
+        } else if ((campaignSubTab === 'active' || campaignSubTab === 'history') && filteredCamps.length > 0) {
+          handleSelectCampaign(filteredCamps[0]);
         } else {
-          // For prepare/review/queue tabs, just set state without fetching heavy analytics
           setSelectedCamp(null);
         }
 
@@ -983,7 +1053,7 @@ export default function App() {
       try {
         await api.updateCampaignStatus(id, newStatus);
         setSuccessMsg(`Campaign lifecycle status updated to '${newStatus}'!`);
-        loadInitialData();
+        loadInitialData(true);
       } catch (err: any) {
         setError(err.message || "Failed to update campaign status");
       }
@@ -996,6 +1066,7 @@ export default function App() {
       try {
         await api.launchCampaign(id);
         setSuccessMsg("Campaign approved and dispatched successfully!");
+        await loadInitialData(true);
         setCampaignSubTab('active');
       } catch (err: any) {
         setError(err.message || "Failed to dispatch campaign");
@@ -1130,7 +1201,7 @@ export default function App() {
       }
     };
 
-    if (loading) return <LoadingSpinner label="Opening campaign coordinator..." />;
+    // No early return on loading to allow rendering of workflow steps and preview skeleton
 
     // Grouping list for sub-tabs
     const prepareOpps = opportunities;
@@ -1303,8 +1374,14 @@ export default function App() {
           </div>
         )}
 
-        {/* 1. PREPARE CAMPAIGN TAB */}
-        {campaignSubTab === 'prepare' && (
+        {loading ? (
+          <div className="card" style={{ padding: '12px' }}>
+            <SkeletonLoader type="table" rows={6} />
+          </div>
+        ) : (
+          <>
+            {/* 1. PREPARE CAMPAIGN TAB */}
+            {campaignSubTab === 'prepare' && (
           <div className="split-pane" style={{ gridTemplateColumns: '32% 68%', gap: '16px' }}>
             {/* Left Suggested Actions Selector */}
             <div className="split-left" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1357,8 +1434,53 @@ export default function App() {
               {selectedOpp ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {loadingPrepareContext ? (
-                    <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', margin: 0 }}>
-                      <LoadingSpinner label="Loading audience review and promotion context..." />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {/* Step 1 & 2: Audience Review Card Skeleton */}
+                      <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '4px' }}>
+                          <div className="skeleton-item" style={{ height: '12px', width: '120px', borderRadius: '3px' }} />
+                          <div className="skeleton-item" style={{ height: '20px', width: '220px', marginTop: '6px', borderRadius: '4px' }} />
+                          <div className="skeleton-item" style={{ height: '14px', width: '380px', marginTop: '4px', borderRadius: '3px' }} />
+                        </div>
+                        {/* Summary grid skeleton */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <div key={idx} style={{ padding: '10px', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
+                              <div className="skeleton-item" style={{ height: '10px', width: '80%', borderRadius: '2px' }} />
+                              <div className="skeleton-item" style={{ height: '18px', width: '50%', marginTop: '6px', borderRadius: '3px' }} />
+                            </div>
+                          ))}
+                        </div>
+                        {/* Distribution charts skeleton */}
+                        <div className="grid-3" style={{ gap: '12px', marginTop: '4px' }}>
+                          {Array.from({ length: 3 }).map((_, idx) => (
+                            <div key={idx} style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              <div className="skeleton-item" style={{ height: '12px', width: '60%', borderRadius: '2px' }} />
+                              {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <div className="skeleton-item" style={{ height: '10px', width: '40%', borderRadius: '2px' }} />
+                                    <div className="skeleton-item" style={{ height: '10px', width: '15%', borderRadius: '2px' }} />
+                                  </div>
+                                  <div className="skeleton-item" style={{ height: '6px', width: '100%', borderRadius: '3px' }} />
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Step 3: Promotion Review Card Skeleton */}
+                      <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '4px' }}>
+                          <div className="skeleton-item" style={{ height: '12px', width: '120px', borderRadius: '3px' }} />
+                          <div className="skeleton-item" style={{ height: '20px', width: '220px', marginTop: '6px', borderRadius: '4px' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                          <div className="skeleton-item" style={{ height: '80px', flex: 1, borderRadius: '4px' }} />
+                          <div className="skeleton-item" style={{ height: '80px', flex: 1, borderRadius: '4px' }} />
+                        </div>
+                      </div>
                     </div>
                   ) : !prepareContext ? (
                     <div className="card fade-in" style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '32px', textAlign: 'center' }}>
@@ -1612,8 +1734,8 @@ export default function App() {
                             <div className="loader" style={{ margin: '0 auto' }}></div>
                             <div style={{ textAlign: 'center' }}>
                               <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>Xenia AI is drafting your campaign.</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                This may take a few seconds. Please wait.
+                              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 500 }}>
+                                {draftingMessages[draftingStep]}
                               </div>
                             </div>
                           </div>
@@ -1622,7 +1744,7 @@ export default function App() {
 
                       {/* Transition button once copy is drafted */}
                       {proposal && (
-                        <div className="card fade-in" style={{ margin: 0, backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div ref={proceedReviewRef} className="card fade-in" style={{ margin: 0, backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ color: 'var(--color-success)', fontSize: '12.5px', fontWeight: 600 }}>
                             Campaign strategy generated successfully! Review channel drafts below.
                           </div>
@@ -1656,7 +1778,7 @@ export default function App() {
               {reviewCamps.map(camp => (
                 <div
                   key={camp.campaign_id}
-                  onClick={() => { setSelectedCamp(camp); setSelectedCampaignId(camp.campaign_id); }}
+                  onClick={() => handleSelectCampaign(camp)}
                   style={{
                     backgroundColor: 'var(--bg-surface)',
                     border: selectedCamp?.campaign_id === camp.campaign_id ? '1.5px solid var(--color-accent)' : '1px solid var(--border-color)',
@@ -3345,6 +3467,8 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     );
